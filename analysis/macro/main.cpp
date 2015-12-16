@@ -39,16 +39,16 @@ int main(){
   //////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
 
-  TString inDir = "./data/25ns_v7_LooseSel/"; 		// input directory of the samples
+  TString inDir = "data/25ns_v7_LooseSel/merged/"; 		// input directory of the samples
   TString outDir = "./diPhoPlots/25ns_v7_LooseSel/";	// output directory to send results
 
   bool doFakeData = false;	// use FakeData to test combiner (mimicks data)
   bool sortMC = false;		// use if want to sort bkg smallest to biggest, else uses order given
   bool doBlind = true;		// use to blind the analysis for Data (don't use distributions for met>100 & 110<mgg<150)
   bool makePURWfiles = false;	// recompute PURW and make files (need also doReweightPU=true for this to run)
-  bool doReweightPU = true;	// use PURW from old files if !makePURWfiles
-  bool doPlots = false;		// make plots for each sample individually
-  bool doComb = false;		// make stack/overlay plots
+  bool doReweightPU = false;	// use PURW from old files if !makePURWfiles
+  bool doPlots = true;		// make plots for each sample individually
+  bool doComb = true;		// make stack/overlay plots
   bool doABCD = false;		// run ABCD method 
   bool doCompare = true;	// call Comparer 
 
@@ -184,80 +184,80 @@ int main(){
   if (doFakeData){
     std::cout << "Working on FakeData sample" << std::endl;
     Plotter * FakeData = new Plotter(inDir,outDir,"FakeData",puweights_Data,lumi,false,true,doBlind,type);
-    FakeData->DoPlots();
+    FakeData->DoPlots(0);
     delete FakeData;
     std::cout << "Finished FakeData sample" << std::endl;
   }
   if (doPlots){
     std::cout << "Working on DoubleEG sample" << std::endl;
     Plotter * dEG = new Plotter(inDir,outDir,"DoubleEG",puweights_Data,lumi,false,true,doBlind,type);
-    dEG->DoPlots();
+    dEG->DoPlots(0);
     delete dEG;
     std::cout << "Finished DoubleEG sample" << std::endl;
 
     std::cout << "Working on GJets sample" << std::endl;
     Plotter * GJets = new Plotter(inDir,outDir,"GJets",puweights_MC,lumi,false,false,doBlind,type);
-    GJets->DoPlots();
+    GJets->DoPlots(1);
     delete GJets;
     std::cout << "Finished GJets sample" << std::endl;
 
     std::cout << "Working on QCD sample" << std::endl;
     Plotter * QCD = new Plotter(inDir,outDir,"QCD",puweights_MC,lumi,false,false,doBlind,type);
-    QCD->DoPlots();
+    QCD->DoPlots(2);
     delete QCD;
     std::cout << "Finished QCD sample" << std::endl;
 
     std::cout << "Working on WZH sample" << std::endl;
     Plotter * WZH = new Plotter(inDir,outDir,"VH",puweights_MC,lumi,false,false,doBlind,type);
-    WZH->DoPlots();
+    WZH->DoPlots(0);
     delete WZH;
     std::cout << "Finished WZH sample" << std::endl;
 
     std::cout << "Working on GluGluH sample" << std::endl;
     Plotter * GGHGG = new Plotter(inDir,outDir,"GluGluHToGG",puweights_MC,lumi,false,false,doBlind,type);
-    GGHGG->DoPlots();
+    GGHGG->DoPlots(0);
     delete GGHGG;
     std::cout << "Finished GluGluH sample" << std::endl;
   
     std::cout << "Working on DiPhoton sample" << std::endl;
     Plotter * GG = new Plotter(inDir,outDir,"DiPhoton",puweights_MC,lumi,false,false,doBlind,type);
-    GG->DoPlots();
+    GG->DoPlots(0);
     delete GG;
     std::cout << "Finished GluGluH sample" << std::endl;
 
     std::cout << "Working on DYJets sample" << std::endl;
     Plotter * DY = new Plotter(inDir,outDir,"DYJetsToLL",puweights_MC,lumi,false,false,doBlind,type);
-    DY->DoPlots();
+    DY->DoPlots(0);
     delete DY;
     std::cout << "Finished DYJets sample" << std::endl;
 
     std::cout << "Working on DMHgg 2HDM MZP600 sample" << std::endl;
     Plotter * DMH_mZP600 = new Plotter(inDir,outDir,"2HDM_mZP600",puweights_MC,lumi,true,false,doBlind,type);
-    DMH_mZP600->DoPlots();
+    DMH_mZP600->DoPlots(0);
     delete DMH_mZP600;
     std::cout << "Finished DMHgg 2HDM MZP600 sample" << std::endl;
    
     std::cout << "Working on DMHgg 2HDM MZP800 sample" << std::endl;
     Plotter * DMH_mZP800 = new Plotter(inDir,outDir,"2HDM_mZP800",puweights_MC,lumi,true,false,doBlind,type);
-    DMH_mZP800->DoPlots();
+    DMH_mZP800->DoPlots(0);
     delete DMH_mZP800;
     std::cout << "Finished DMHgg 2HDM MZP800 sample" << std::endl;
    
     std::cout << "Working on DMHgg 2HDM MZP1000 sample" << std::endl;
     Plotter * DMH_mZP1000 = new Plotter(inDir,outDir,"2HDM_mZP1000",puweights_MC,lumi,true,false,doBlind,type);
-    DMH_mZP1000->DoPlots();
+    DMH_mZP1000->DoPlots(0);
     delete DMH_mZP1000;
     std::cout << "Finished DMHgg 2HDM MZP1000 sample" << std::endl;
    
     std::cout << "Working on DMHgg 2HDM MZP1200 sample" << std::endl;
     Plotter * DMH_mZP1200 = new Plotter(inDir,outDir,"2HDM_mZP1200",puweights_MC,lumi,true,false,doBlind,type);
-    DMH_mZP1200->DoPlots();
+    DMH_mZP1200->DoPlots(0);
     delete DMH_mZP1200;
     std::cout << "Finished DMHgg 2HDM MZP1200 sample" << std::endl;
 
     std::cout << "Working on DMHgg 2HDM MZP1400 sample" << std::endl;
     Plotter * DMH_mZP1400 = new Plotter(inDir,outDir,"2HDM_mZP1400",puweights_MC,lumi,true,false,doBlind,type);
-    DMH_mZP1400->DoPlots();
+    DMH_mZP1400->DoPlots(0);
     delete DMH_mZP1400;
     std::cout << "Finished DMHgg 2HDM MZP1400 sample" << std::endl;
 
@@ -278,7 +278,7 @@ int main(){
     //DMH_mZP2500->DoPlots();
     //delete DMH_mZP2500;
     //std::cout << "Finished DMHgg 2HDM MZP2500 sample" << std::endl;
-
+    
     //std::cout << "Working on DMHgg M1000 sample" << std::endl;
     //Plotter * DMH_M1000 = new Plotter(inDir,outDir,"DMHtoGG_M1000",puweights_sig,lumi,true,false,doBlind,type);
     //DMH_M1000->DoPlots();
@@ -325,9 +325,9 @@ int main(){
   colorMap["2HDM_mZP1000"]		= kMagenta;
   colorMap["2HDM_mZP1200"]		= kPink-6;
   colorMap["2HDM_mZP1400"]		= kPink+4;
-  colorMap["2HDM_mZP1700"]		= kPink+6;
-  colorMap["2HDM_mZP2000"]		= kPink-1;
-  colorMap["2HDM_mZP2500"]		= kPink+8;
+  //colorMap["2HDM_mZP1700"]		= kPink+6;
+  //colorMap["2HDM_mZP2000"]		= kPink-1;
+  //colorMap["2HDM_mZP2500"]		= kPink+8;
 
   SamplePairVec Samples; // vector to also be used for stack plots
   //ordered to match Livia
@@ -458,14 +458,15 @@ int main(){
     stackAll->DoComb();
     delete stackAll;   
  
+    // chiara
     //// do overlay plots for n-1 plots
-    //Combiner *combAlln1 = new Combiner(Samples,lumi,colorMap,outDir,true,false,type);
-    //combAlln1->DoComb();
-    //delete combAlln1;   
+    Combiner *combAlln1 = new Combiner(Samples,lumi,colorMap,outDir,true,false,type);
+    combAlln1->DoComb();
+    delete combAlln1;   
     //// do stack plots for n-1 plots 
-    //Combiner *stackAlln1 = new Combiner(Samples,lumi,colorMap,outDir,true,true,type);
-    //stackAlln1->DoComb();
-    //delete stackAlln1;   
+    Combiner *stackAlln1 = new Combiner(Samples,lumi,colorMap,outDir,true,true,type);
+    stackAlln1->DoComb();
+    delete stackAlln1;   
   }// end doComb
 
   ////////////////////////////////////////////////////

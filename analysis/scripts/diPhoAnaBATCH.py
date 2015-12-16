@@ -26,7 +26,6 @@ elif (isMC):
     process.GlobalTag = GlobalTag(process.GlobalTag, 'MCRUN2_74_V9', '')
     print "MCRUN2_74_V9"
 
-
 #process.GlobalTag.globaltag = 'MCRUN2_74_V9A' 		#50ns
 #process.GlobalTag.globaltag = 'POSTLS170_V5::All' 	#Phys14
 
@@ -42,7 +41,7 @@ process.source = cms.Source("PoolSource",
 if (isMC==False and is2015DFromChiara):
     print "applying 2015D json"                                
     process.source.lumisToProcess = CfgTypes.untracked(CfgTypes.VLuminosityBlockRange())  
-    JSONfile = '/afs/cern.ch/user/c/crovelli/public/json2015/doubleEG/processedAndGolden_2015D_oct25.json'
+    JSONfile = '/afs/cern.ch/user/c/crovelli/public/json2015/doubleEG/processedAndGolden_2015D_finalAfewMissing.json'
     myLumis = LumiList.LumiList(filename = JSONfile).getCMSSWString().split(',')  
     process.source.lumisToProcess.extend(myLumis)  
 

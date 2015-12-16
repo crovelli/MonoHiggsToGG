@@ -224,7 +224,7 @@ private:
 
   // to compute weights for pileup
   std::vector<Double_t> puweights_;
-  bool doOfficialPUrecipe = false;
+  bool doOfficialPUrecipe = true;
 
   // output tree with several diphoton infos
   TTree *DiPhotonTree;
@@ -405,8 +405,6 @@ void NewDiPhoAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
     //float difference = perEveW - genInfo->weight(); 
     //if (difference != 0.0) std::cout << " perEveW - genInfo->weight is NOT zero! with perEveW = " << perEveW << " and genInfo " << genInfo->weight() << " diff " << difference <<  std::endl;
   }
-
-
 
   //bool isSig = false;
   //if (sampleID>100 && sampleID<110) isSig = true; 

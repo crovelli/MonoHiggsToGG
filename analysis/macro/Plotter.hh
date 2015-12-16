@@ -43,7 +43,7 @@ public:
   Plotter(const TString inName, const TString outName, const TString inSpecies, const DblVec puweights, const Double_t lumi, Bool_t sigMC, Bool_t Data, Bool_t Blind, const TString type);
   ~Plotter();
 
-  void DoPlots();  
+  void DoPlots(int prompt);  
   void FindMinAndMax(TH1F *& h, int plotLog);
   TH1D * DrawOverflowBin(const TH1D * h);
 
@@ -96,6 +96,8 @@ private:
   Float_t	calomet; 
   Float_t	calometphi; 
   Float_t	calometSumEt; 
+  Int_t         genmatch1;
+  Int_t         genmatch2;
   Float_t	pt1;
   Float_t	pt2;
   Float_t	phi1;
@@ -154,6 +156,8 @@ private:
   TBranch	*b_calomet;
   TBranch	*b_calometPhi;
   TBranch	*b_calometSumEt;
+  TBranch	*b_genmatch1;
+  TBranch	*b_genmatch2;
   TBranch	*b_pt1;
   TBranch	*b_pt2;
   TBranch	*b_phi1;

@@ -1371,23 +1371,31 @@ void NewDiPhoAnalyzer::SetPuWeights(std::string puWeightFile) {
     }
     return;
   }
-
+  
   if (doOfficialPUrecipe){
     TH1D* weightedPU= (TH1D*)gen_pu->Clone("weightedPU");
     weightedPU->Multiply(puweights);
-
+    
     // Rescaling weights in order to preserve same integral of events                               
     TH1D* weights = (TH1D*)puweights->Clone("rescaledWeights");
     weights->Scale( gen_pu->Integral(1,MAX_PU_REWEIGHT) / weightedPU->Integral(1,MAX_PU_REWEIGHT) );
-  }
+    for (int i = 0; i<MAX_PU_REWEIGHT; i++) {
+      float weight=1.;
+      weight=weights->GetBinContent(i+1);
+      puweights_.push_back(weight);
+      //std::cout << "i= " << i << " & has weight = " << weight << std::endl;
+    }
 
-  float sumPuWeights=0.;
-  for (int i = 0; i<MAX_PU_REWEIGHT; i++) {
-    float weight=1.;
-    weight=puweights->GetBinContent(i+1);
-    sumPuWeights+=weight;
-    puweights_.push_back(weight);
-    //std::cout << "i= " << i << " & has weight = " << weight << std::endl;
+  } else {
+
+    float sumPuWeights=0.;
+    for (int i = 0; i<MAX_PU_REWEIGHT; i++) {
+      float weight=1.;
+      weight=puweights->GetBinContent(i+1);
+      sumPuWeights+=weight;
+      puweights_.push_back(weight);
+      //std::cout << "i= " << i << " & has weight = " << weight << std::endl;
+    }
   }
 }
 

@@ -52,7 +52,7 @@ int main(){
   bool doABCD = false;		// run ABCD method 
   bool doCompare = true;	// call Comparer 
 
-  Double_t lumi = 1263.9; // in pb^-1 
+  Double_t lumi = 2137.5; // in pb^-1 
   UInt_t nBins_vtx = 60; // number of bins for PURW 
   TString type = "png"; // type of plots to be made
   

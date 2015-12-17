@@ -1,7 +1,7 @@
 #include "Plotter.hh"
 #include "Style.hh"
-#include "../../../DataFormats/Math/interface/deltaPhi.h"
-//#include "mkPlotsLivia/CMS_lumi.C"
+//#include "../../../DataFormats/Math/interface/deltaPhi.h"
+#include "mkPlotsLivia/CMS_lumi.C"
 
 Plotter::Plotter( TString inName, TString outName, TString inSpecies, const DblVec puweights, const Double_t lumi, Bool_t sigMC, Bool_t Data, Bool_t Blind, TString type){
 
@@ -80,7 +80,7 @@ Plotter::~Plotter(){
 }// end Plotter::~Plotter
 
 
-void Plotter::DoPlots(){
+void Plotter::DoPlots(int prompt){
   Plotter::SetUpPlots();
  
   nentries = tpho->GetEntries(); 
@@ -149,8 +149,10 @@ void Plotter::DoPlots(){
     if (eleveto1==1)   passEV1 = true;
     if (eleveto2==1)   passEV2 = true; 
 
-    if (passCH1 && passNH1 && passPH1 && passS1 && passHE1 /*&& passEV1*/) passAll1 = true;
-    if (passCH2 && passNH2 && passPH2 && passS2 && passHE2 /*&& passEV2*/) passAll2 = true;
+    //if (passCH1 && passNH1 && passPH1 && passS1 && passHE1 /*&& passEV1*/) passAll1 = true;     
+    //if (passCH2 && passNH2 && passPH2 && passS2 && passHE2 /*&& passEV2*/) passAll2 = true;
+    if (passCH1 && passNH1 && passPH1 && passS1 && passHE1 && passEV1) passAll1 = true;       
+    if (passCH2 && passNH2 && passPH2 && passS2 && passHE2 && passEV2) passAll2 = true;       
     if (passAll1 && passAll2) passBoth = true;
 
     //if (!passEV1 || !passEV2) std::cout << "Eleveto didn't work! " << std::endl;
@@ -160,6 +162,11 @@ void Plotter::DoPlots(){
     //if ( pt1 > mgg/3 && pt2 > mgg/4 ){
       fTH1DMap["eff_sel"]->Fill(1.5,Weight);
       if (hltDiphoton30Mass95==1){ //passes trigger
+
+	// to remove duplicate events
+	if (prompt==1 && (genmatch1==1 && genmatch2==1)) continue;   // only PF and FF for gjets
+	if (prompt==2 && (genmatch1==1 && genmatch2==1)) continue;   // only PF and FF for gjets
+	//if (prompt==2 && (genmatch1==1 || genmatch2==1)) continue;   // only FF for QCD
 
         fTH1DMap["eff_sel"]->Fill(2.5,Weight);
         //Fill histograms
@@ -177,6 +184,7 @@ void Plotter::DoPlots(){
 	  }
           if (pfmet < 100) fTH1DMap["pfmet"]->Fill(pfmet,Weight);
           if (calomet < 100) fTH1DMap["calomet"]->Fill(calomet,Weight);
+	  if (ptgg<0) fTH1DMap["ptgg"]->Fill(ptgg,Weight);
 	}
         else{
 	  fTH1DMap["mgg"]->Fill(mgg,Weight);
@@ -188,9 +196,9 @@ void Plotter::DoPlots(){
           fTH2DMap["mgg_ptgg"]->Fill(ptgg,mgg,Weight);
           fTH2DMap["t1pfmet_PU"]->Fill(nvtx,t1pfmet,Weight);
           fTH2DMap["t1pfmet_ptgg"]->Fill(ptgg,t1pfmet,Weight);
+	  fTH1DMap["ptgg"]->Fill(ptgg,Weight);
 	}
         fTH1DMap["nvtx"]->Fill(nvtx,Weight);
-        fTH1DMap["ptgg"]->Fill(ptgg,Weight);
         fTH1DMap["pt1"]->Fill(pt1,Weight);
         fTH1DMap["pt2"]->Fill(pt2,Weight);
         fTH1DMap["t1pfmetphi"]->Fill(t1pfmetphi,Weight);
@@ -216,8 +224,8 @@ void Plotter::DoPlots(){
 	fTH1DMap["eleveto2"]->Fill(eleveto2,Weight);
 
   	fTH1DMap["phigg"]->Fill(fLorenzVecgg.Phi(),Weight); 
-        fTH1DMap["dphi_ggmet"]->Fill(deltaPhi(fLorenzVecgg.Phi(),t1pfmetphi),Weight);
-        fTH1DMap["absdphi_ggmet"]->Fill(TMath::Abs(deltaPhi(fLorenzVecgg.Phi(),t1pfmetphi)),Weight);
+        //fTH1DMap["dphi_ggmet"]->Fill(deltaPhi(fLorenzVecgg.Phi(),t1pfmetphi),Weight);
+        //fTH1DMap["absdphi_ggmet"]->Fill(TMath::Abs(deltaPhi(fLorenzVecgg.Phi(),t1pfmetphi)),Weight);
         fTH1DMap["deta_gg"]->Fill((eta1-eta2),Weight);
         fTH1DMap["absdeta_gg"]->Fill(TMath::Abs(eta1-eta2),Weight);
         //if (!isData){
@@ -235,7 +243,7 @@ void Plotter::DoPlots(){
         //fill n-1 plots for the photon ID selection variables
         if (passCH1 && passNH1 && passPH1 && passS1)  fTH1DMap["hoe1_n-1"]->Fill(hoe1,Weight); 
         if (passCH1 && passNH1 && passPH1 && passHE1) fTH1DMap["sieie1_n-1"]->Fill(sieie1,Weight);
-        if (passCH1 && passNH1 && passHE1 && passS1)  fTH1DMap["phoiso1_n-1"]->Fill(phoiso1,Weight);
+	if (passCH1 && passNH1 && passHE1 && passS1)  fTH1DMap["phoiso1_n-1"]->Fill(phoiso1,Weight);
         if (passCH1 && passPH1 && passHE1 && passS1)  fTH1DMap["neuiso1_n-1"]->Fill(neuiso1,Weight);
         if (passPH1 && passNH1 && passHE1 && passS1)  fTH1DMap["chiso1_n-1"]->Fill(chiso1,Weight);
 
@@ -259,7 +267,6 @@ void Plotter::DoPlots(){
         } 
         if (passBoth){
           fTH1DMap["nvtx_n-1"]->Fill(nvtx,Weight);
-          fTH1DMap["ptgg_n-1"]->Fill(ptgg,Weight);  
           fTH1DMap["t1pfmetphi_n-1"]->Fill(t1pfmetphi,Weight);  
           fTH1DMap["pfmetphi_n-1"]->Fill(pfmetphi,Weight);
           fTH1DMap["calometphi_n-1"]->Fill(calometphi,Weight);
@@ -271,6 +278,7 @@ void Plotter::DoPlots(){
             if (t1pfmet < 0) fTH1DMap["t1pfmet_n-1"]->Fill(t1pfmet,Weight);  
             if (pfmet < 100)   fTH1DMap["pfmet_n-1"]->Fill(pfmet,Weight);
             if (calomet < 100) fTH1DMap["calomet_n-1"]->Fill(calomet,Weight);
+	    if (ptgg<0) fTH1DMap["ptgg_n-1"]->Fill(ptgg,Weight);  
             //if (mgg >= 110 && mgg <= 130) fTH1DMap["t1pfmet_selmgg"]->Fill(t1pfmet,Weight); 
             //if (t1pfmet >= 100) fTH1DMap["mgg_selt1pfmet"]->Fill(mgg,Weight); 
 	  }
@@ -280,6 +288,7 @@ void Plotter::DoPlots(){
             fTH1DMap["t1pfmet_n-1"]->Fill(t1pfmet,Weight);  
             fTH1DMap["pfmet_n-1"]->Fill(pfmet,Weight);
             fTH1DMap["calomet_n-1"]->Fill(calomet,Weight);
+	    fTH1DMap["ptgg_n-1"]->Fill(ptgg,Weight);  
             if (mgg >= 110 && mgg <= 130) fTH1DMap["t1pfmet_selmgg"]->Fill(t1pfmet,Weight); 
             if (t1pfmet >= 250){ 
 	      fTH1DMap["mgg_selt1pfmet"]->Fill(mgg,Weight); 
@@ -288,7 +297,7 @@ void Plotter::DoPlots(){
 	  }
 
         }
-
+      
         if (passCH1 && passCH2){
           fTH1DMap["eff_sel"]->Fill(3.5,Weight);
           if (passNH1 && passNH2){
@@ -324,6 +333,7 @@ void Plotter::DoPlots(){
           }
         }
  
+
       }// end if passes trigger
     }// end if passes pt cuts 
     
@@ -572,6 +582,8 @@ void Plotter::SetBranchAddresses(){
   tpho->SetBranchAddress("calomet", &calomet, &b_calomet);   
   tpho->SetBranchAddress("calometPhi", &calometphi, &b_calometPhi);   
   tpho->SetBranchAddress("calometSumEt", &calometSumEt, &b_calometSumEt);   
+  tpho->SetBranchAddress("genmatch1", &genmatch1, &b_genmatch1);   
+  tpho->SetBranchAddress("genmatch2", &genmatch2, &b_genmatch2);   
   tpho->SetBranchAddress("pt1", &pt1, &b_pt1);   
   tpho->SetBranchAddress("pt2", &pt2, &b_pt2);   
   tpho->SetBranchAddress("chiso1", &chiso1, &b_chiso1);   

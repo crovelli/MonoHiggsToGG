@@ -39,16 +39,22 @@ else:
     print "Using name PAT"
 
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32( 2000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32( 1000 ) )
 
 process.source = cms.Source("PoolSource",
                             fileNames=cms.untracked.vstring(
+	#"/store/user/soffi/MonoHgg_2HDM_MZP1000_MA0300_13TeV/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160211_173214/0000/myMicroAODOutputFile_1.root", 
 	#GluGluH
-	"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReMiniAOD-1_1_0-25ns/1_1_0/GluGluHToGG_M-125_13TeV_powheg_pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160105_223154/0000/myMicroAODOutputFile_5.root",
-
+	"/store/group/soffi/GluGluHToGG_M-125_13TeV_powheg_pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160211_162649/0000/myMicroAODOutputFile_1.root" 
+	#"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReMiniAOD-1_1_0-25ns/1_1_0/GluGluHToGG_M-125_13TeV_powheg_pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160105_223154/0000/myMicroAODOutputFile_5.root",
+        #New MET syst livia
+    #    '/store/group/soffi/GluGluHToGG_M-125_13TeV_powheg_pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160211_162649/0000/myMicroAODOutputFile_1.root'
+        #"/store/group/soffi/GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160211_162546/0000/myMicroAODOutputFile_1.root"
+        #old seth
+        #"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReMiniAOD-1_1_0-25ns/1_1_0/GJet_Pt-20to40_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160105_222944/0000/myMicroAODOutputFile_1.root"
         #***************************************************test file synchronyzation***************************************************
         #data
-        #"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReReco74X-1_1_0-25ns/1_1_0/DoubleEG/RunIISpring15-ReReco74X-1_1_0-25ns-1_1_0-v0-Run2015D-04Dec2015-v2/160112_095813/0000/myMicroAODOutputFile_1.root" 
+        #"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReReco74X-1_1_0-25ns/1_1_0/DoubleEG/RunIISpring15-ReReco74X-1_1_0-25ns-1_1_0-v0-Run2015D-04Dec2015-v2/160112_095813/0000/myMicroAODOutputFile_1.root" ,
         #QCD 40 inf
         #"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReMiniAOD-1_1_0-25ns/1_1_0/QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160105_223606/0000/myMicroAODOutputFile_1.root" 
         #QCD 30 inf
@@ -76,24 +82,27 @@ process.load("flashgg/MicroAOD/flashggDiPhotons_cfi")
 
 process.TFileService = cms.Service("TFileService",fileName = cms.string("diPhotons.root"))
 
+process.options = cms.untracked.PSet(
+    SkipEvent = cms.untracked.vstring('ProductNotFound')
+)
+
 # to make jets
 from flashgg.MicroAOD.flashggJets_cfi import flashggBTag, maxJetCollections
 process.flashggUnpackedJets = cms.EDProducer("FlashggVectorVectorJetUnpacker",  
                                              JetsTag = cms.InputTag("flashggFinalJets"),          
                                              NCollections = cms.uint32(maxJetCollections) 
                                              )               
-
 UnpackedJetCollectionVInputTag = cms.VInputTag()       
 for i in range(0,maxJetCollections):    
     UnpackedJetCollectionVInputTag.append(cms.InputTag('flashggUnpackedJets',str(i)))  
 
 process.diPhoAna = cms.EDAnalyzer('NewDiPhoAnalyzer',
                                   VertexTag = cms.untracked.InputTag('offlineSlimmedPrimaryVertices'),
-				  METTag=cms.untracked.InputTag('slimmedMETs'),
+				  METTag=cms.untracked.InputTag('slimmedMETs'),#::FLASHggMicroAOD
                                   inputTagJets= UnpackedJetCollectionVInputTag,            
                                   ElectronTag=cms.InputTag('flashggSelectedElectrons'),    
                                   MuonTag=cms.InputTag('flashggSelectedMuons'),            
-                                  bTag = cms.untracked.string(flashggBTag),                
+                                  #bTag = cms.untracked.string(flashggBTag),                
                                   genPhotonExtraTag = cms.InputTag("flashggGenPhotonsExtra"),    
                                   DiPhotonTag = cms.untracked.InputTag('flashggDiPhotons'),
                                   PileUpTag = cms.untracked.InputTag('slimmedAddPileupInfo'),
@@ -101,11 +110,12 @@ process.diPhoAna = cms.EDAnalyzer('NewDiPhoAnalyzer',
                                   dopureweight = cms.untracked.int32(1),
                                   bits         = cms.InputTag('TriggerResults::HLT'),
                                   flags        = cms.InputTag(flag),
-				  sampleIndex  = cms.untracked.int32(15),
+				  sampleIndex  = cms.untracked.int32(100),
                                   puWFileName  = cms.string('/afs/cern.ch/user/m/mzientek/public/pileupWeights_fullReReco74X.root'),  
                                   xsec         = cms.untracked.double(1), #pb
                                   kfac         = cms.untracked.double(1.),
                                   sumDataset   = cms.untracked.double(1.0),   # chiara
                                   )
 
-process.p = cms.Path(process.flashggUnpackedJets*process.diPhoAna )     
+process.p = cms.Path( process.diPhoAna )     
+#process.p = cms.Path(process.flashggUnpackedJets*process.diPhoAna )     

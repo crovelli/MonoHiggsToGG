@@ -1,6 +1,6 @@
 #include "ABCDMethod.hh"
 
-ABCDMethod::ABCDMethod( SamplePairVec Samples, const Double_t inLumi, const TString outdir, Bool_t Blind){
+ABCDMethod::ABCDMethod( SamplePairVec Samples, const Double_t inLumi, const TString outdir, Bool_t Blind, Bool_t doQCDrescale){
 
   // load RooFit
   gSystem->Load("libRooFit");
@@ -8,6 +8,7 @@ ABCDMethod::ABCDMethod( SamplePairVec Samples, const Double_t inLumi, const TStr
 
   lumi = inLumi;
   doBlind = Blind;
+  doQCDscale = doQCDrescale;
   fInDir = outdir;
   fOutDir = outdir+"ABCD";
 
@@ -79,6 +80,7 @@ ABCDMethod::~ABCDMethod(){
     for (UInt_t data = 0; data < fNData; data++) delete fInDataTH1DHists[th1d][data];
     for (UInt_t mc = 0; mc < fNBkg; mc++) delete fInBkgTH1DHists[th1d][mc];
     for (UInt_t mc = 0; mc < fNSig; mc++) delete fInSigTH1DHists[th1d][mc];
+    delete GJetsClone[th1d];
     delete fOutDataTH1DHists[th1d];
     delete fOutBkgTH1DHists[th1d];
     delete fOutSelBkgTH1DHists[th1d];
@@ -87,6 +89,7 @@ ABCDMethod::~ABCDMethod(){
     for (UInt_t data = 0; data < fNData; data++) delete fInDataTH2DHists[th2d][data];
     for (UInt_t mc = 0; mc < fNBkg; mc++) delete fInBkgTH2DHists[th2d][mc];
     for (UInt_t mc = 0; mc < fNSig; mc++) delete fInSigTH2DHists[th2d][mc];
+    delete GJetsCloneTH2D[th2d];
     delete fOutDataTH2DHists[th2d];
     delete fOutBkgTH2DHists[th2d];
     delete fOutSelBkgTH2DHists[th2d];
@@ -99,9 +102,10 @@ ABCDMethod::~ABCDMethod(){
   }
 
    
-  delete fOutFile;
+
   // close output text files
   fOutTableTxtFile.close();
+  delete fOutFile;
   
   std::cout << "Finished Deleting" << std::endl;
 }
@@ -131,7 +135,7 @@ void ABCDMethod::DoAnalysis(){
   fSampleTitleMap["VH"]			= "V + H";
   fSampleTitleMap["DYJetsToLL"]		= "Drell-Yan";
   fSampleTitleMap["GluGluHToGG"]	= "$H \\rightarrow \\gamma \\gamma$ (ggH)";
-  fSampleTitleMap["ttHJetToGG"]		= "tt $\\rightarrow H \\rightarrow \\gamma\\gamma$";
+  fSampleTitleMap["ttHJetToGG"]		= "tt + $H \\rightarrow \\gamma\\gamma$";
   fSampleTitleMap["VBFHToGG"]		= "VBF $H \\rightarrow \\gamma\\gamma$";
 
   // find indices for the different bkg samples
@@ -146,17 +150,33 @@ void ABCDMethod::DoAnalysis(){
     if (fBkgNames[mc] == "VBFHToGG")    i_vbf = mc;
   }
 
+  // Because QCD has some events with very large weights
+  // Copy the GJets histo, weight it by the QCD integral 
+  // and use it for QCD distribution instead.
+  Double_t qcd_integral = 0;
+  Double_t gjets_integral = 0;
+  Double_t qcd_integral_new = 0;
+  qcd_integral = fInBkgTH1DHists[0][i_qcd]->Integral();  
+  GJetsClone[0] = (TH1D*)fInBkgTH1DHists[0][i_gj]->Clone();
+  GJetsCloneTH2D[0] = (TH2D*)fInBkgTH2DHists[0][i_gj]->Clone();
+  gjets_integral = GJetsClone[0]->Integral();
+  if (gjets_integral > 0) GJetsClone[0]->Scale(qcd_integral/gjets_integral);
+  if (gjets_integral > 0) GJetsCloneTH2D[0]->Scale(qcd_integral/gjets_integral);
+
   // sum over nonresonant bkgs only
   fOutSelBkgTH2DHists[0] = (TH2D*)fInBkgTH2DHists[0][i_dy]->Clone();
   fOutSelBkgTH2DHists[0]->Add(fInBkgTH2DHists[0][i_gg]);
   fOutSelBkgTH2DHists[0]->Add(fInBkgTH2DHists[0][i_gj]); 
-  fOutSelBkgTH2DHists[0]->Add(fInBkgTH2DHists[0][i_qcd]);    
+  if (doQCDscale) fOutSelBkgTH2DHists[0]->Add(GJetsCloneTH2D[0]);
+  else fOutSelBkgTH2DHists[0]->Add(fInBkgTH2DHists[0][i_qcd]);    
+
   // sum over nonresonant bkgs only
   fOutSelBkgTH1DHists[0] = (TH1D*)fInBkgTH1DHists[0][i_dy]->Clone();
   fOutSelBkgTH1DHists[0]->Add(fInBkgTH1DHists[0][i_gg]);
   fOutSelBkgTH1DHists[0]->Add(fInBkgTH1DHists[0][i_gj]); 
-  fOutSelBkgTH1DHists[0]->Add(fInBkgTH1DHists[0][i_qcd]);    
- 
+  if (doQCDscale) fOutSelBkgTH1DHists[0]->Add(GJetsClone[0]);
+  else fOutSelBkgTH1DHists[0]->Add(fInBkgTH1DHists[0][i_qcd]);    
+
   for (UInt_t mc = 0; mc < fNBkg; mc++){
     //fInBkgTH2DHists[0][mc]->Scale(3000./1260.);// in order to scale to 3fb-1
     //std::cout << "number entries in bkg in " << fInBkgTH2DHists[0][mc]->GetEntries() << std::endl;
@@ -164,6 +184,10 @@ void ABCDMethod::DoAnalysis(){
     if (mc == 0){
       fOutBkgTH2DHists[0] = (TH2D*)fInBkgTH2DHists[0][mc]->Clone();
       fOutBkgTH1DHists[0] = (TH1D*)fInBkgTH1DHists[0][mc]->Clone();
+    }
+    else if (doQCDscale && mc == i_qcd){
+      fOutBkgTH1DHists[0]->Add(GJetsClone[0]);
+      fOutBkgTH2DHists[0]->Add(GJetsCloneTH2D[0]);
     }
     else{
       fOutBkgTH2DHists[0]->Add(fInBkgTH2DHists[0][mc]);
@@ -836,6 +860,8 @@ void ABCDMethod::InitHists(){
   fOutBkgTH1DHists.resize(fNTH1D);
   fOutSelBkgTH1DHists.resize(fNTH1D);
 
+  GJetsClone.resize(fNTH1D);
+  GJetsCloneTH2D.resize(fNTH2D);
 
   fInDataTH2DHists.resize(fNTH2D);
   fInBkgTH2DHists.resize(fNTH2D);

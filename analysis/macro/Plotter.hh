@@ -40,7 +40,7 @@ typedef TH2DMap::iterator		TH2DMapIter;
 
 class Plotter{
 public:
-  Plotter(const TString inName, const TString outName, const TString inSpecies, const DblVec puweights, const Double_t lumi, Bool_t Data, Bool_t Blind, const TString type);
+  Plotter(const TString inName, const TString outName, const TString inSpecies, const DblVec puweights, const Double_t lumi, Bool_t Data, Bool_t Blind, const TString type, Bool_t doMETCorr, const DblVec metcorr);
   ~Plotter();
 
   void DoPlots(int prompt);  
@@ -70,6 +70,11 @@ private:
   TLorentzVector	fLorenzVec1;
   TLorentzVector	fLorenzVec2;
   TLorentzVector	fLorenzVecgg;
+  TLorentzVector	fLorenzVecJet1;
+  TLorentzVector	fLorenzVecJet2;
+
+  Bool_t		doMETcorr;
+  DblVec		fMETCorr;
 
   DblVec		fPUWeights;
   Double_t 		fLumi;
@@ -88,7 +93,22 @@ private:
   Float_t	mgg;
   Float_t	ptgg;
   Float_t	t1pfmet; 
-  Float_t	t1pfmetphi; 
+  Float_t       t1p2pfmet;
+  Float_t       t1pfmetJetEnUp;
+  Float_t       t1pfmetJetEnDown;
+  Float_t       t1pfmetJetResUp;
+  Float_t       t1pfmetJetResDown;
+  Float_t       t1pfmetMuonEnUp;
+  Float_t       t1pfmetMuonEnDown;
+  Float_t       t1pfmetElectronEnUp;
+  Float_t       t1pfmetElectronEnDown;
+  Float_t       t1pfmetTauEnUp;
+  Float_t       t1pfmetTauEnDown;
+  Float_t       t1pfmetPhotonEnUp;
+  Float_t       t1pfmetPhotonEnDown;
+  Float_t       t1pfmetUnclusteredEnUp;
+  Float_t       t1pfmetUnclusteredEnDown;
+  Float_t	t1pfmetPhi; 
   Float_t	t1pfmetSumEt; 
   Float_t	pfmet; 
   Float_t	pfmetphi; 
@@ -160,6 +180,16 @@ private:
   Int_t		hltDiphoton30Mass55;
   Int_t		hltDiphoton30Mass55PV;
   Int_t		hltDiphoton30Mass55EB;
+  Float_t       ptJetLead;
+  Float_t       etaJetLead;
+  Float_t       phiJetLead;
+  Float_t       massJetLead;
+  Int_t         indexJetLead;
+  Float_t       ptJetSubLead;
+  Float_t       etaJetSubLead;
+  Float_t       phiJetSubLead;
+  Float_t       massJetSubLead;
+  Int_t         indexJetSubLead;
   Int_t         nEle;
   Int_t         nMuons;
   Int_t         nJets;
@@ -195,6 +225,21 @@ private:
   TBranch	*b_mgg;
   TBranch	*b_ptgg;
   TBranch	*b_t1pfmet;
+  TBranch       *b_t1p2pfmet;   //!
+  TBranch       *b_t1pfmetJetEnUp;   //!
+  TBranch       *b_t1pfmetJetEnDown;   //!
+  TBranch       *b_t1pfmetJetResUp;   //!
+  TBranch       *b_t1pfmetJetResDown;   //!
+  TBranch       *b_t1pfmetMuonEnUp;   //!
+  TBranch       *b_t1pfmetMuonEnDown;   //!
+  TBranch       *b_t1pfmetElectronEnUp;   //!
+  TBranch       *b_t1pfmetElectronEnDown;   //!
+  TBranch       *b_t1pfmetTauEnUp;   //!
+  TBranch       *b_t1pfmetTauEnDown;   //!
+  TBranch       *b_t1pfmetPhotonEnUp;   //!
+  TBranch       *b_t1pfmetPhotonEnDown;   //!
+  TBranch       *b_t1pfmetUnclusteredEnUp;   //!
+  TBranch       *b_t1pfmetUnclusteredEnDown;   //!
   TBranch	*b_t1pfmetPhi;
   TBranch	*b_t1pfmetSumEt;
   TBranch	*b_pfmet;
@@ -272,6 +317,16 @@ private:
   TBranch       *b_nJets;   //!
   TBranch       *b_nLooseBjets;   //!
   TBranch       *b_nMediumBjets;   //!
+  TBranch       *b_ptJetLead;   //!
+  TBranch       *b_etaJetLead;   //!
+  TBranch       *b_phiJetLead;   //!
+  TBranch       *b_massJetLead;   //!
+  TBranch       *b_indexJetLead;   //!
+  TBranch       *b_ptJetSubLead;   //!
+  TBranch       *b_etaJetSubLead;   //!
+  TBranch       *b_phiJetSubLead;   //!
+  TBranch       *b_massJetSubLead;   //!
+  TBranch       *b_indexJetSubLead;   //!
   TBranch       *b_vhtruth;   //!
   TBranch       *b_metF_GV;   //!
   TBranch       *b_metF_HBHENoise;   //!

@@ -35,10 +35,12 @@ typedef std::vector<TLine*>   TLineVec;
 
 class Combiner{
 public:
-  Combiner(const SamplePairVec Samples, const Double_t inLumi, const ColorMap colorMap, const TString outname, const Bool_t doNmin1, const Bool_t do_stack, const TString type);
+  Combiner(const SamplePairVec Samples, const Double_t inLumi, const ColorMap colorMap, const TString outname, const Bool_t doNmin1, const Bool_t do_stack, const TString type, const Bool_t doQCDrescale );
   void InitCanvAndHists();
   void InitTH1DNames();
   void DoComb();
+  void FindMETEfficiencies();
+  void MakeMETEffPlots();
   void MakeEffPlots();
   void StackPlots();
   void MakeOutputCanvas();
@@ -54,6 +56,7 @@ private:
   TString	addText;
   Double_t 	lumi;
   Bool_t	doStack;
+  Bool_t	doQCDscale;
   TString	fType;
 
   UInt_t	fNData;
@@ -61,6 +64,8 @@ private:
   UInt_t	fNSig;
 
   UInt_t	fIndexEff;
+  UInt_t	fIndexMET;
+  UInt_t	fNMETPlots;
   UInt_t	fIndexMgg;
   UInt_t 	fIndexPtgg;
   UInt_t	fIndexNvtx;
@@ -88,9 +93,18 @@ private:
   TH1DVecVec	fInBkgTH1DHists;
   TH1DVecVec	fInSigTH1DHists;
 
+  TStrVec	SystMET;
+  TStrMap	fSystMETTitleMap;
+  ColorMap	fColorMapMETEff;
+  TH1DVecVec	fOutBkgMETEffTH1DHists;
+  TH1DVecVec	fOutSigMETEffTH1DHists;
+  
+  TH1DVec	GJetsClone;
+
   TH1DVec	fOutBkgTH1DHists;
   TH1DVec	fOutSigTH1DHists;
   TH1DVec	fOutDataTH1DHists;
+
   TH1DVec	fOutRatioTH1DHists;
   TH1DVec	fOutRatioTH1DHistsCopy;
   TLineVec	fOutTH1DRatioLines;

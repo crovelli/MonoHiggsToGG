@@ -1,12 +1,16 @@
 #include "Combiner.hh"
+#include <iostream>
+#include <fstream>
 
-Combiner::Combiner( SamplePairVec Samples, const Double_t inLumi, const ColorMap colorMap, const TString outdir, const Bool_t doNmin1, const Bool_t do_stack, const TString type){
+Combiner::Combiner( SamplePairVec Samples, const Double_t inLumi, const ColorMap colorMap, const TString outdir, const Bool_t doNmin1, const Bool_t do_stack, const TString type, const Bool_t doQCDrescale){
 
   if (doNmin1) addText = "_n-1";
   else addText="";
 
   doStack = false;
   if (do_stack) doStack = true;
+
+  doQCDscale = doQCDrescale;
 
   fType = type;
   lumi	= inLumi;
@@ -77,6 +81,7 @@ Combiner::~Combiner(){
       delete fOutTH1DRatioPads[th1d];
       delete fOutTH1DRatioLines[th1d];
     //}
+    delete GJetsClone[th1d];
     delete fOutBkgTH1DHists[th1d];
     delete fOutBkgTH1DStacks[th1d];
     delete fOutBkgTH1DStacksForUncer[th1d];
@@ -109,16 +114,46 @@ void Combiner::DoComb(){
       }
     //}// end if ndata>0
 
+    
+    // Because QCD has some events with very large weights
+    // Copy the GJets histo, weight it by the QCD integral 
+    // and use it for QCD distribution instead.
+    Double_t qcd_integral = 0;
+    Double_t gjets_integral = 0;
+    Double_t qcd_integral_new = 0;
+    for (UInt_t mc = 0; mc < fNBkg; mc++){
+      if (fBkgNames[mc] == "QCD") qcd_integral = fInBkgTH1DHists[th1d][mc]->Integral();  
+      if (fBkgNames[mc] == "GJets"){
+         GJetsClone[th1d] = (TH1D*)fInBkgTH1DHists[th1d][mc]->Clone();
+         GJetsClone[th1d]->SetFillColor(fColorMap["QCD"]);
+         gjets_integral = GJetsClone[th1d]->Integral();
+         if (gjets_integral > 0) GJetsClone[th1d]->Scale(qcd_integral/gjets_integral);
+      }
+    }
+    qcd_integral_new = GJetsClone[th1d]->Integral();
+    //if (qcd_integral_new != qcd_integral) std::cout << "New QCD is NOT the same: old = " << qcd_integral << " new = " << qcd_integral_new << " diff = " << qcd_integral_new-qcd_integral << std::endl;
+    //std::cout << "QCD_Integral     = " << qcd_integral << std::endl;
+    //std::cout << "QCD_Integral_New = " << qcd_integral_new << std::endl;
+
     // bkg : copy histos and add to stacks
     for (UInt_t mc = 0; mc < fNBkg; mc++){
       //fInBkgTH1DHists[th1d][mc]->Scale(lumi);
-      fOutBkgTH1DStacks[th1d]->Add(fInBkgTH1DHists[th1d][mc]);
-      fOutBkgTH1DStacksForUncer[th1d]->Add(fInBkgTH1DHists[th1d][mc]);
+      if (doQCDscale && fBkgNames[mc] == "QCD"){
+        fOutBkgTH1DStacks[th1d]->Add(GJetsClone[th1d]);
+        fOutBkgTH1DStacksForUncer[th1d]->Add(GJetsClone[th1d]);
+      }
+      else{
+        fOutBkgTH1DStacks[th1d]->Add(fInBkgTH1DHists[th1d][mc]);
+        fOutBkgTH1DStacksForUncer[th1d]->Add(fInBkgTH1DHists[th1d][mc]);
+      }
       // draw bkg in legend as box for stack plots, and line for overlay plot
       //if (doStack) fTH1DLegends[th1d]->AddEntry(fInBkgTH1DHists[th1d][mc],fSampleTitleMap[fBkgNames[mc]],"f");
       //else fTH1DLegends[th1d]->AddEntry(fInBkgTH1DHists[th1d][mc],fSampleTitleMap[fBkgNames[mc]],"l");
       if (mc == 0){
         fOutBkgTH1DHists[th1d] = (TH1D*)fInBkgTH1DHists[th1d][mc]->Clone();
+      }
+      else if (doQCDscale && fBkgNames[mc]=="QCD"){
+        fOutBkgTH1DHists[th1d]->Add(GJetsClone[th1d]);
       }
       else{
         fOutBkgTH1DHists[th1d]->Add(fInBkgTH1DHists[th1d][mc]);
@@ -188,9 +223,529 @@ void Combiner::DoComb(){
   }// end loop over th1d histos
 
   //if (addText!="_n-1") Combiner::MakeEffPlots();
+  if (addText!="_n-1") Combiner::FindMETEfficiencies();
   Combiner::MakeOutputCanvas();
 
 }// end Combiner::DoComb
+
+void Combiner::FindMETEfficiencies(){
+  // Finds the efficiency for each sample (integral of events passing 80 GeV cut over all selected events)
+  // Integrals are computed also including the overflow bin
+  // Also plots for each sample the MET shape for the different corrections to visualize the effect
+
+  fNMETPlots = 15;
+  UInt_t fNMETCat = fNMETPlots*2;
+
+  DblVecVec fSigMETEff;
+  DblVecVec fBkgMETEff;
+  DblVec    fDataMETEff;
+  fSigMETEff.resize(fNSig);
+  fBkgMETEff.resize(fNBkg);
+
+  DblVecVec fSigMET;
+  DblVecVec fBkgMET;
+  DblVec    fDataMET;
+  fSigMET.resize(fNSig);
+  fBkgMET.resize(fNBkg);
+   
+
+  for (UInt_t mc = 0; mc < fNSig; mc++){
+    fSigMETEff[mc].resize(fNMETCat); 
+    fSigMET[mc].resize(fNMETCat); 
+    for (UInt_t th1d = fIndexMET; th1d < (fIndexMET+fNMETPlots); th1d++){
+      UInt_t maxbin = fInSigTH1DHists[th1d][mc]->GetSize(); 
+      UInt_t minbin = fInSigTH1DHists[th1d][mc]->GetXaxis()->FindBin(80.0);
+      UInt_t zerbin = fInSigTH1DHists[th1d][mc]->GetXaxis()->FindBin(0.0);
+      UInt_t effbin1 = th1d-fIndexMET;
+      UInt_t effbin2 = th1d-fIndexMET+fNMETPlots;
+      fSigMETEff[mc][th1d-fIndexMET+fNMETPlots] = fInSigTH1DHists[th1d][mc]->Integral(minbin,maxbin);// events above 80 GeV
+      fSigMETEff[mc][th1d-fIndexMET] = fInSigTH1DHists[th1d][mc]->Integral(zerbin,maxbin);// all events 
+      if (fSigMETEff[mc][th1d-fIndexMET] > 0) fSigMET[mc][th1d-fIndexMET] = (fSigMETEff[mc][th1d-fIndexMET+fNMETPlots]/fSigMETEff[mc][th1d-fIndexMET]);
+      else fSigMET[mc][th1d-fIndexMET]=0; 
+    }
+  }  
+  for (UInt_t mc = 0; mc < fNBkg; mc++){
+    fBkgMETEff[mc].resize(fNMETCat); 
+    fBkgMET[mc].resize(fNMETCat); 
+    for (UInt_t th1d = fIndexMET; th1d < (fIndexMET+fNMETPlots); th1d++){
+      UInt_t maxbin = fInBkgTH1DHists[th1d][mc]->GetSize(); 
+      UInt_t minbin = fInBkgTH1DHists[th1d][mc]->GetXaxis()->FindBin(80.0);
+      UInt_t effbin1 = th1d-fIndexMET;
+      UInt_t effbin2 = th1d-fIndexMET+fNMETPlots;
+      fBkgMETEff[mc][th1d-fIndexMET+fNMETPlots] = fInBkgTH1DHists[th1d][mc]->Integral(minbin,maxbin);// events above 80 GeV
+      fBkgMETEff[mc][th1d-fIndexMET] = fInBkgTH1DHists[th1d][mc]->Integral();// all events
+      if (fBkgMETEff[mc][th1d-fIndexMET] > 0) fBkgMET[mc][th1d-fIndexMET] = fBkgMETEff[mc][th1d-fIndexMET+fNMETPlots]/fBkgMETEff[mc][th1d-fIndexMET];
+      else fBkgMET[mc][th1d-fIndexMET]=0; 
+    }
+  }  
+  fDataMETEff.resize(fNMETCat);
+  fDataMET.resize(fNMETCat);
+  for (UInt_t th1d = fIndexMET; th1d < (fIndexMET+fNMETPlots); th1d++){
+    UInt_t maxbin = fOutDataTH1DHists[th1d]->GetSize(); 
+    UInt_t minbin = fOutDataTH1DHists[th1d]->GetXaxis()->FindBin(80.0);
+    UInt_t effbin1 = th1d-fIndexMET;
+    UInt_t effbin2 = th1d-fIndexMET+fNMETPlots;
+    fDataMETEff[th1d-fIndexMET+fNMETPlots] = fOutDataTH1DHists[th1d]->Integral(minbin,maxbin);// events above 80 GeV
+    fDataMETEff[th1d-fIndexMET] = fOutDataTH1DHists[th1d]->Integral();// all events
+    if (fDataMETEff[th1d-fIndexMET] > 0) fDataMET[th1d-fIndexMET] = fDataMETEff[th1d-fIndexMET+fNMETPlots]/fDataMETEff[th1d-fIndexMET];
+    else fDataMET[th1d-fIndexMET]=0; 
+  }
+
+  SystMET.push_back("Original");
+  SystMET.push_back("JetEnUp");
+  SystMET.push_back("JetEnDown");
+  SystMET.push_back("JetResUp");
+  SystMET.push_back("JetResDown");
+  SystMET.push_back("MuonEnUp");
+  SystMET.push_back("MuonEnDown");
+  SystMET.push_back("EleEnUp");
+  SystMET.push_back("EleEnDown");
+  SystMET.push_back("TauEnUp");
+  SystMET.push_back("TauEnDown");
+  SystMET.push_back("PhoEnUp");
+  SystMET.push_back("PhoEnDown");
+  SystMET.push_back("JetUnclEnUp");
+  SystMET.push_back("JetUnclEnDown");
+ 
+  fSystMETTitleMap["Original"]		= "Original";  
+  fSystMETTitleMap["JetEnUp"] 		= "Jet Energy Up"; 
+  fSystMETTitleMap["JetEnDown"]		= "Jet Energy Down"; 
+  fSystMETTitleMap["JetResUp"] 		= "Jet Res. Up"; 
+  fSystMETTitleMap["JetResDown"]	= "Jet Res. Down"; 
+  fSystMETTitleMap["MuonEnUp"]		= "Muon Energy Up"; 
+  fSystMETTitleMap["MuonEnDown"]	= "Muon Energy Down"; 
+  fSystMETTitleMap["EleEnUp"]		= "Electron Energy Up"; 
+  fSystMETTitleMap["EleEnDown"]		= "Electron Energy Down"; 
+  fSystMETTitleMap["TauEnUp"]		= "Tau Energy Up"; 
+  fSystMETTitleMap["TauEnDown"]		= "Tau Energy Down"; 
+  fSystMETTitleMap["PhoEnUp"]		= "Photon Energy Up"; 
+  fSystMETTitleMap["PhoEnDown"] 	= "Photon Energy Down"; 
+  fSystMETTitleMap["JetUnclEnUp"]	= "Unclust. Jet Energy Up"; 
+  fSystMETTitleMap["JetUnclEnDown"] 	= "Unclust. Jet Energy Down"; 
+
+
+  //std::cout << " ---------------------------------------------------------------- " << std::endl;
+  //std::cout << " ---------------------------------------------------------------- " << std::endl;
+  //std::cout << "MET Efficiencies for Systematics " << std::endl; 
+  //std::cout << " ---------------------------------------------------------------- " << std::endl;
+  //std::cout << " ---------------------------------------------------------------- " << std::endl;
+  ////for (UInt_t i=0; i < fNMETPlots; i++){
+  ////  std::cout << " Data		: " << SystMET[i] << "		= " << fDataMETEff[i+fNMETPlots] << " / " << fDataMETEff[i] << "	= " << fDataMET[i] << std::endl;
+  ////}
+  ////std::cout << " ---------------------------------------------------------------- " << std::endl;
+  //for (UInt_t mc=0; mc < fNSig; mc++){
+  //  for (UInt_t i=0; i < fNMETPlots; i++){
+  //    std::cout << fSigNames[mc] << " 	: " << SystMET[i] << "		= " << fSigMETEff[mc][i+fNMETPlots] << " / " << fSigMETEff[mc][i] << "	= " << fSigMET[mc][i] << std::endl;
+  //  }
+  //  std::cout << " ---------------------------------------------------------------- " << std::endl;
+  //}
+  //for (UInt_t mc=0; mc < fNBkg; mc++){
+  //  for (UInt_t i=0; i < fNMETPlots; i++){
+  //    std::cout << fBkgNames[mc] << " 	: " << SystMET[i] << "		= " << fBkgMETEff[mc][i+fNMETPlots] << " / " << fBkgMETEff[mc][i] << "	= " << fBkgMET[mc][i] << std::endl;
+  //  }
+  //  std::cout << " ---------------------------------------------------------------- " << std::endl;
+  //}
+  //std::cout << " ---------------------------------------------------------------- " << std::endl;
+
+  // write as a table for Latex
+  std::ofstream	fOutTableTxtFile;
+  fOutTableTxtFile.open(Form("%s/ResultsSystematicsForLatex.tex",fOutDir.Data()));
+
+  TStrMap fSampleTitleMap;
+  fSampleTitleMap["QCD"] 		= "QCD";
+  fSampleTitleMap["GJets"]		= "$\\gamma$ + Jets";
+  fSampleTitleMap["VH"]			= "V + H";
+  fSampleTitleMap["DYJetsToLL"]		= "Drell-Yan";
+  fSampleTitleMap["GluGluHToGG"]	= "$H \\rightarrow \\gamma \\gamma$ (ggH)";
+  fSampleTitleMap["DiPhoton"]		= "$\\gamma\\gamma$";
+  fSampleTitleMap["ttHJetToGG"]		= "tt $+ H \\rightarrow \\gamma\\gamma$";
+  fSampleTitleMap["VBFHToGG"]		= "VBF $H \\rightarrow \\gamma\\gamma$";
+  fSampleTitleMap["2HDM_mZP600"]	= "2HDM, $m_{Z'} = 600 GeV, m_{A0} = 300 GeV$";
+  fSampleTitleMap["2HDM_mZP800"]	= "2HDM, $m_{Z'} = 800 GeV, m_{A0} = 300 GeV$";
+  fSampleTitleMap["2HDM_mZP1000"]	= "2HDM, $m_{Z'} = 1000 GeV, m_{A0} = 300 GeV$";
+  fSampleTitleMap["2HDM_mZP1200"]	= "2HDM, $m_{Z'} = 1200 GeV, m_{A0} = 300 GeV$";
+  fSampleTitleMap["2HDM_mZP1400"]	= "2HDM, $m_{Z'} = 1400 GeV, m_{A0} = 300 GeV$";
+  fSampleTitleMap["2HDM_mZP1700"]	= "2HDM, $m_{Z'} = 1700 GeV, m_{A0} = 300 GeV$";
+  fSampleTitleMap["2HDM_mZP2000"]	= "2HDM, $m_{Z'} = 2000 GeV, m_{A0} = 300 GeV$";
+  fSampleTitleMap["2HDM_mZP2500"]	= "2HDM, $m_{Z'} = 2500 GeV, m_{A0} = 300 GeV$";
+
+  // find the biggest & smallest efficiencies
+  // data
+  Double_t maxData = 0;
+  Double_t minData = 100; 
+  for (UInt_t i=0; i < fNMETPlots; i++){
+    if (maxData < fDataMET[i]) maxData = fDataMET[i];
+    if (minData > fDataMET[i]) minData = fDataMET[i];
+  }
+  // sig
+  DblVec   maxSig, minSig;
+  maxSig.resize(fNSig);
+  minSig.resize(fNSig);
+  for (UInt_t mc=0; mc < fNSig; mc++){
+    maxSig[mc]=0;
+    minSig[mc]=100;
+    for (UInt_t i=0; i < fNMETPlots; i++){
+      if (maxSig[mc] <= fSigMET[mc][i]) maxSig[mc] = fSigMET[mc][i];
+      if (minSig[mc] >= fSigMET[mc][i]) minSig[mc] = fSigMET[mc][i]; 
+    } 
+  } 
+  // bkg
+  DblVec   maxBkg, minBkg;
+  maxBkg.resize(fNBkg);
+  minBkg.resize(fNBkg); 
+  for (UInt_t mc=0; mc < fNBkg; mc++){
+    maxBkg[mc]=0;
+    minBkg[mc]=100;
+    for (UInt_t i=0; i < fNMETPlots; i++){
+      if (maxBkg[mc] <= fBkgMET[mc][i]) maxBkg[mc] = fBkgMET[mc][i];
+      if (minBkg[mc] >= fBkgMET[mc][i]) minBkg[mc] = fBkgMET[mc][i]; 
+    } 
+  } 
+
+
+  if (fOutTableTxtFile.is_open()){
+    //setup Latex doc
+    fOutTableTxtFile << "\\documentclass[a4paper,landscape]{article}" << std::endl;
+    fOutTableTxtFile << "\\usepackage[paperheight=15.0in,paperwidth=6.0in,margin=1.0in,headheight=0.0in,footskip=0.5in,includehead,includefoot]{geometry}" << std::endl;
+    fOutTableTxtFile << "\\begin{document}" << std::endl;
+
+    // ==========================================================
+    // start summary of results table
+    fOutTableTxtFile << "\% Summary of MET Systematics" << std::endl; 
+    fOutTableTxtFile << "\\begin{table}[bthp]" <<std::endl;
+    fOutTableTxtFile << "\\begin{tabular}{|l|c|c|}" <<std::endl;
+    fOutTableTxtFile << "\\hline \\hline" <<std::endl;
+    fOutTableTxtFile << "\\multicolumn{3}{|c|}{" << Form("$\\sqrt{s}$ = 13 TeV; L = %1.1f $fb^{-1}$",lumi) <<"} \\\\" <<std::endl;
+    fOutTableTxtFile << "\\hline \\hline" << std::endl;
+    fOutTableTxtFile << "Sample & Efficiency & Efficiency Range \\\\" << std::endl;
+    fOutTableTxtFile << "\\hline" <<std::endl;
+    for (UInt_t mc = 0; mc < fNSig; mc++){
+      fOutTableTxtFile << fSampleTitleMap[fSigNames[mc]] << " & " << Form("%1.4f",fSigMET[mc][0]) << "& -" << Form("%1.4f",fSigMET[mc][0]-minSig[mc]) << ", +" << Form("%1.4f",maxSig[mc]-fSigMET[mc][0]) << " \\\\" << std::endl; 
+    }
+    fOutTableTxtFile << "\\hline" <<std::endl;
+    for (UInt_t mc = 0; mc < fNBkg; mc++){
+      fOutTableTxtFile << fSampleTitleMap[fBkgNames[mc]] << " & " << Form("%1.4f",fBkgMET[mc][0]) << "& -" << Form("%1.4f",fBkgMET[mc][0]-minBkg[mc]) << ", +" << Form("%1.4f",maxBkg[mc]-fBkgMET[mc][0]) << " \\\\" << std::endl; 
+    }
+    fOutTableTxtFile << "Data & " << Form("%1.4f",fDataMET[0]) << "& -" << Form("%1.4f",fDataMET[0]-minData) << ", +" << Form("%1.4f",maxData-fDataMET[0]) << " \\\\" << std::endl; 
+    // end table
+    fOutTableTxtFile << "\\hline \\hline" <<std::endl;
+    fOutTableTxtFile << "\\end{tabular}" <<std::endl;
+    fOutTableTxtFile << "\\end{table}" <<std::endl;
+    // ==========================================================
+
+    // ==========================================================
+    // start list of full systematics table
+    fOutTableTxtFile << "\% Full MET Systematics" << std::endl; 
+
+    // signal
+    for (UInt_t mc=0; mc < fNSig; mc++){
+      fOutTableTxtFile << "\\begin{table}[bthp]" <<std::endl;
+      fOutTableTxtFile << "\\begin{tabular}{|l|c|}" <<std::endl;
+      fOutTableTxtFile << "\\hline \\hline" <<std::endl;
+      fOutTableTxtFile << "\\multicolumn{2}{|c|}{" << fSampleTitleMap[fSigNames[mc]] << "} \\\\" << std::endl;
+      fOutTableTxtFile << "\\multicolumn{2}{|c|}{" << Form("$\\sqrt{s}$ = 13 TeV; L = %1.1f $fb^{-1}$",lumi) <<"} \\\\" <<std::endl;
+      fOutTableTxtFile << "\\hline" <<std::endl;
+      fOutTableTxtFile << "Type1 PF MET Version & Efficiency \\\\" << std::endl;
+      for (UInt_t i=0; i < fNMETPlots; i++){ 
+        fOutTableTxtFile << fSystMETTitleMap[SystMET[i]] << " & " << Form("%1.4f",fSigMET[mc][i])  <<  " \\\\" << std::endl;
+        if (i==0) fOutTableTxtFile << "\\hline" <<std::endl;
+      }
+      fOutTableTxtFile << "\\hline" << std::endl;
+      fOutTableTxtFile << "\\end{tabular}" <<std::endl;
+      fOutTableTxtFile << "\\end{table}" <<std::endl;
+    }
+
+    // background
+    for (UInt_t mc=0; mc < fNBkg; mc++){
+      fOutTableTxtFile << "\\begin{table}[bthp]" <<std::endl;
+      fOutTableTxtFile << "\\begin{tabular}{|l|c|}" <<std::endl;
+      fOutTableTxtFile << "\\hline \\hline" <<std::endl;
+      fOutTableTxtFile << "\\multicolumn{2}{|c|}{" << fSampleTitleMap[fBkgNames[mc]] << "} \\\\" << std::endl;
+      fOutTableTxtFile << "\\multicolumn{2}{|c|}{" << Form("$\\sqrt{s}$ = 13 TeV; L = %1.1f $fb^{-1}$",lumi) <<"} \\\\" <<std::endl;
+      fOutTableTxtFile << "\\hline" <<std::endl;
+      fOutTableTxtFile << "Type1 PF MET Version & Efficiency \\\\" << std::endl;
+      for (UInt_t i=0; i < fNMETPlots; i++){ 
+        fOutTableTxtFile << fSystMETTitleMap[SystMET[i]] << " & " << Form("%1.4f",fBkgMET[mc][i])  <<  " \\\\" << std::endl;
+        if (i==0) fOutTableTxtFile << "\\hline" <<std::endl;
+      }
+      fOutTableTxtFile << "\\hline" << std::endl;
+      fOutTableTxtFile << "\\end{tabular}" <<std::endl;
+      fOutTableTxtFile << "\\end{table}" <<std::endl;
+    }
+
+    // data
+    fOutTableTxtFile << "\\begin{table}[bthp]" <<std::endl;
+    fOutTableTxtFile << "\\begin{tabular}{|l|c|}" <<std::endl;
+    fOutTableTxtFile << "\\hline \\hline" <<std::endl;
+    fOutTableTxtFile << "\\multicolumn{2}{|c|}{Data} \\\\" << std::endl;
+    fOutTableTxtFile << "\\multicolumn{2}{|c|}{" << Form("$\\sqrt{s}$ = 13 TeV; L = %1.1f $fb^{-1}$",lumi) <<"} \\\\" <<std::endl;
+    fOutTableTxtFile << "Type1 PF MET Version & Efficiency \\\\" << std::endl;
+    for (UInt_t i=0; i < fNMETPlots; i++){ 
+      fOutTableTxtFile << fSystMETTitleMap[SystMET[i]] << " & " << Form("%1.4f",fDataMET[i])  <<  " \\\\" << std::endl;
+      if (i==0) fOutTableTxtFile << "\\hline" <<std::endl;
+    }
+    fOutTableTxtFile << "\\hline" << std::endl;
+    fOutTableTxtFile << "\\end{tabular}" <<std::endl;
+    fOutTableTxtFile << "\\end{table}" <<std::endl;
+
+
+    // ==========================================================
+    // end Latex doc
+    fOutTableTxtFile << "\\end{document}" <<std::endl;
+    std::cout << "Writing ResultsTable in " << Form("%s/ResultsTableForLatex.tex",fOutDir.Data()) << std::endl;
+  }
+  else std::cout << "File didn't Open" << std::endl;
+
+  // close output text files
+  fOutTableTxtFile.close();
+
+  Combiner::MakeMETEffPlots();
+}// end Combiner::FindMETEfficiencies
+
+
+void Combiner::MakeMETEffPlots(){
+
+  // Make comparison plots of MET shapes after the various corrections
+  // go into the output file
+  fOutFile->cd();
+
+  // setup color map for different MET shapes
+  fColorMapMETEff["Original"]		= kBlack;
+  fColorMapMETEff["JetEnUp"]		= kRed;
+  fColorMapMETEff["JetEnDown"]		= kMagenta;
+  fColorMapMETEff["JetResUp"]		= kOrange-3;
+  fColorMapMETEff["JetResDown"]		= kOrange-3;
+  fColorMapMETEff["MuonEnUp"]		= kTeal-1;
+  fColorMapMETEff["MuonEnDown"]		= kTeal-1;
+  fColorMapMETEff["EleEnUp"]		= kYellow;
+  fColorMapMETEff["EleEnDown"]		= kYellow;
+  fColorMapMETEff["TauEnUp"]		= kRed;
+  fColorMapMETEff["TauEnDown"]		= kRed;
+  fColorMapMETEff["PhoEnUp"]		= kGreen;
+  fColorMapMETEff["PhoEnDown"]		= kTeal;
+  fColorMapMETEff["JetUnclEnUp"]	= kBlue;
+  fColorMapMETEff["JetUnclEnDown"]	= kBlue;
+
+  // setup plot legend for signal
+  std::vector<TLegend* > fSigMETEffLegend;
+  fSigMETEffLegend.resize(fNSig*2);
+  for (UInt_t mc = 0; mc < fNSig*2; mc++){
+    fSigMETEffLegend[mc] = new TLegend(0.32,0.7,0.9,0.934); // (x1,y1,x2,y2)
+    fSigMETEffLegend[mc]->SetNColumns(2);
+    fSigMETEffLegend[mc]->SetBorderSize(4);
+    fSigMETEffLegend[mc]->SetLineColor(kBlack);
+    fSigMETEffLegend[mc]->SetTextSize(0.03);//0.035
+    fSigMETEffLegend[mc]->SetLineWidth(2);
+  }
+  // setup plot legend for background 
+  std::vector<TLegend* > fBkgMETEffLegend;
+  fBkgMETEffLegend.resize(fNBkg*2);
+  for (UInt_t mc = 0; mc < fNBkg*2; mc++){
+    fBkgMETEffLegend[mc] = new TLegend(0.32,0.7,0.9,0.934); // (x1,y1,x2,y2)
+    fBkgMETEffLegend[mc]->SetNColumns(2);
+    fBkgMETEffLegend[mc]->SetBorderSize(4);
+    fBkgMETEffLegend[mc]->SetLineColor(kBlack);
+    fBkgMETEffLegend[mc]->SetTextSize(0.03);//0.035
+    fBkgMETEffLegend[mc]->SetLineWidth(2);
+  }
+
+  // copy the plots and normalize them
+  fOutSigMETEffTH1DHists.resize(fNMETPlots);
+  fOutBkgMETEffTH1DHists.resize(fNMETPlots);
+  for (UInt_t th1d = 0; th1d < fNMETPlots; th1d++){
+    // sig
+    fOutSigMETEffTH1DHists[th1d].resize(fNSig);
+    for (UInt_t mc = 0; mc < fNSig; mc++){
+      fOutSigMETEffTH1DHists[th1d][mc] = (TH1D*) fInSigTH1DHists[th1d+fIndexMET][mc]->Clone();
+      //if (mc==0 || mc==1) fOutSigMETEffTH1DHists[th1d][mc]->GetXaxis()->SetMaximum(500);
+      //else fOutSigMETEffTH1DHists[th1d][mc]->GetXaxis()->SetMaximum(900);
+      if (fOutSigMETEffTH1DHists[th1d][mc]->Integral() > 0){
+        fOutSigMETEffTH1DHists[th1d][mc]->Scale(1.0/fOutSigMETEffTH1DHists[th1d][mc]->Integral());
+      } 
+      fOutSigMETEffTH1DHists[th1d][mc]->SetFillColor(0);
+      fOutSigMETEffTH1DHists[th1d][mc]->SetLineColor(fColorMapMETEff[SystMET[th1d]]);
+      fOutSigMETEffTH1DHists[th1d][mc]->SetTitle(fSigNames[mc]);
+      fOutSigMETEffTH1DHists[th1d][mc]->GetYaxis()->SetTitle("");
+      if (th1d!=0) fSigMETEffLegend[mc]->AddEntry(fOutSigMETEffTH1DHists[th1d][mc],SystMET[th1d],"l");
+      if (th1d==1 || th1d==2 || th1d==11 || th1d==12) fSigMETEffLegend[mc+fNSig]->AddEntry(fOutSigMETEffTH1DHists[th1d][mc],SystMET[th1d],"l");
+    }
+    // bkg
+    fOutBkgMETEffTH1DHists[th1d].resize(fNBkg);
+    for (UInt_t mc = 0; mc < fNBkg; mc++){
+      fOutBkgMETEffTH1DHists[th1d][mc] = (TH1D*) fInBkgTH1DHists[th1d+fIndexMET][mc]->Clone();
+      //fOutBkgMETEffTH1DHists[th1d][mc]->GetXaxis()->SetMaximum(350);
+      fOutBkgMETEffTH1DHists[th1d][mc]->GetXaxis()->SetRangeUser(10,100);
+      if (fOutBkgMETEffTH1DHists[th1d][mc]->Integral() > 0){
+        fOutBkgMETEffTH1DHists[th1d][mc]->Scale(1.0/fOutBkgMETEffTH1DHists[th1d][mc]->Integral());
+      } 
+      fOutBkgMETEffTH1DHists[th1d][mc]->SetFillColor(0);
+      fOutBkgMETEffTH1DHists[th1d][mc]->SetLineColor(fColorMapMETEff[SystMET[th1d]]);
+      fOutBkgMETEffTH1DHists[th1d][mc]->SetTitle(fBkgNames[mc]);
+      fOutBkgMETEffTH1DHists[th1d][mc]->GetYaxis()->SetTitle("");
+      if (th1d!=0) fBkgMETEffLegend[mc]->AddEntry(fOutBkgMETEffTH1DHists[th1d][mc],SystMET[th1d],"l");
+      if (th1d==1 || th1d==2 || th1d==11 || th1d==12) fBkgMETEffLegend[mc+fNBkg]->AddEntry(fOutBkgMETEffTH1DHists[th1d][mc],SystMET[th1d],"l");
+    }
+  }
+  // add original MET distribution last in legend
+  for (UInt_t mc = 0; mc < fNSig*2; mc++){
+    if (mc < fNSig) fSigMETEffLegend[mc]->AddEntry(fOutSigMETEffTH1DHists[0][mc],SystMET[0],"l"); 
+    else fSigMETEffLegend[mc]->AddEntry(fOutSigMETEffTH1DHists[0][mc-fNSig],SystMET[0],"l"); 
+  }  
+  for (UInt_t mc = 0; mc < fNBkg*2; mc++){
+    if (mc < fNBkg) fBkgMETEffLegend[mc]->AddEntry(fOutBkgMETEffTH1DHists[0][mc],SystMET[0],"l"); 
+    else fBkgMETEffLegend[mc]->AddEntry(fOutBkgMETEffTH1DHists[0][mc-fNBkg],SystMET[0],"l"); 
+  }  
+
+  // Make signal plots
+  TCanvVec fOutSigMETEffCanvas;
+  fOutSigMETEffCanvas.resize(fNSig*2); 
+  std::vector<TPad* > fOutSigMETEffPad;
+  fOutSigMETEffPad.resize(fNSig*2); 
+
+  for (UInt_t mc = 0; mc < fNSig*2; mc++){
+    gStyle->SetOptStat(0);
+    // setup canvases
+    if (mc < fNSig) fOutSigMETEffCanvas[mc] = new TCanvas(fSigNames[mc].Data(),"");
+    else fOutSigMETEffCanvas[mc] = new TCanvas(Form("%s_v2",fSigNames[mc-fNSig].Data()),"");
+    if (fOutSigMETEffCanvas[mc] == (TCanvas*)"NULL") std::cout << "CANVAS IS NULL" << std::endl;
+    fOutSigMETEffCanvas[mc]->cd();
+    fOutSigMETEffCanvas[mc]->Draw();
+    // setup pads
+    fOutSigMETEffPad[mc] = new TPad("","",0.01,0.2,0.99,1.);
+    fOutSigMETEffPad[mc]->SetBottomMargin(0);
+    fOutSigMETEffPad[mc]->SetRightMargin(0.06); 
+    fOutSigMETEffPad[mc]->SetLeftMargin(0.12); 
+    fOutSigMETEffPad[mc]->Draw(); 
+    fOutSigMETEffPad[mc]->cd(); 
+
+    Double_t maxval = 1; 
+    if (mc < fNSig) maxval = fOutSigMETEffTH1DHists[0][mc]->GetMaximum();
+    else maxval = fOutSigMETEffTH1DHists[0][mc-fNSig]->GetMaximum();
+    // plots with all met shapes
+    if (mc < fNSig){
+      for (UInt_t th1d = 0; th1d < fNMETPlots; th1d++){
+        if (th1d == 0){
+          fOutSigMETEffTH1DHists[th1d][mc]->SetMaximum(maxval*10);
+          fOutSigMETEffTH1DHists[th1d][mc]->SetMinimum(1E-3);
+          fOutSigMETEffTH1DHists[th1d][mc]->Draw("HIST"); 
+          if (mc == 0) fOutSigMETEffTH1DHists[th1d][mc]->GetXaxis()->SetRangeUser(0,400); 
+          if (mc == 1) fOutSigMETEffTH1DHists[th1d][mc]->GetXaxis()->SetRangeUser(0,500); 
+        }
+        else fOutSigMETEffTH1DHists[th1d][mc]->Draw("HIST SAME");
+      }
+      fOutSigMETEffTH1DHists[0][mc]->SetLineWidth(2); 
+      fOutSigMETEffTH1DHists[0][mc]->Draw("HIST SAME"); 
+    }
+    // these have the reduced plots
+    else {
+      for (UInt_t th1d = 0; th1d < fNMETPlots; th1d++){
+        if (th1d == 0){
+          fOutSigMETEffTH1DHists[th1d][mc-fNSig]->SetMaximum(maxval);
+          fOutSigMETEffTH1DHists[th1d][mc-fNSig]->SetMinimum(1E-3);
+          fOutSigMETEffTH1DHists[th1d][mc-fNSig]->Draw("HIST"); 
+        }
+        else if (th1d == 1 || th1d == 2 || th1d == 11 || th1d == 12 ) fOutSigMETEffTH1DHists[th1d][mc-fNSig]->Draw("HIST SAME");
+      }
+      fOutSigMETEffTH1DHists[0][mc-fNSig]->SetLineWidth(2); 
+      fOutSigMETEffTH1DHists[0][mc-fNSig]->Draw("HIST SAME"); 
+    }
+
+    fSigMETEffLegend[mc]->Draw("SAME");
+    // make right format for output plots & save them
+    fOutSigMETEffPad[mc]->SetLogy(1); 
+    CMSLumi(fOutSigMETEffCanvas[mc],11,lumi);
+    if (mc < fNSig) fOutSigMETEffCanvas[mc]->SaveAs(Form("%scomb/METEff_%s.%s",fOutDir.Data(),fSigNames[mc].Data(),fType.Data()));
+    else fOutSigMETEffCanvas[mc]->SaveAs(Form("%scomb/METEff_%s_Reduced.%s",fOutDir.Data(),fSigNames[mc-fNSig].Data(),fType.Data()));
+    fOutFile->cd();
+    if (mc < fNSig) fOutSigMETEffCanvas[mc]->Write(Form("METEff_%s",fSigNames[mc].Data()));
+    else fOutSigMETEffCanvas[mc]->Write(Form("METEff_%s_Reduced",fSigNames[mc-fNSig].Data()));
+
+    delete fSigMETEffLegend[mc];
+    delete fOutSigMETEffPad[mc];
+    delete fOutSigMETEffCanvas[mc];
+  }
+  for (UInt_t mc = 0; mc < fNSig; mc++){
+    for (UInt_t th1d = 0; th1d < fNMETPlots; th1d++){ 
+      delete fOutSigMETEffTH1DHists[th1d][mc]; 
+    }
+  }
+  
+  TCanvVec fOutBkgMETEffCanvas;
+  fOutBkgMETEffCanvas.resize(fNBkg*2); 
+  std::vector<TPad* > fOutBkgMETEffPad;
+  fOutBkgMETEffPad.resize(fNBkg*2); 
+
+  for (UInt_t mc = 0; mc < fNBkg*2; mc++){
+    gStyle->SetOptStat(0);
+    // setup canvases
+    if (mc < fNBkg) fOutBkgMETEffCanvas[mc] = new TCanvas(fBkgNames[mc].Data(),"");
+    else fOutBkgMETEffCanvas[mc] = new TCanvas(Form("%s_v2",fBkgNames[mc-fNBkg].Data()),"");
+    if (fOutBkgMETEffCanvas[mc] == (TCanvas*)"NULL") std::cout << "CANVAS IS NULL" << std::endl;
+    fOutBkgMETEffCanvas[mc]->cd();
+    fOutBkgMETEffCanvas[mc]->Draw();
+    // setup pads
+    fOutBkgMETEffPad[mc] = new TPad("","",0.01,0.2,0.99,1.);
+    fOutBkgMETEffPad[mc]->SetBottomMargin(0);
+    fOutBkgMETEffPad[mc]->SetRightMargin(0.06); 
+    fOutBkgMETEffPad[mc]->SetLeftMargin(0.12); 
+    fOutBkgMETEffPad[mc]->Draw(); 
+    fOutBkgMETEffPad[mc]->cd(); 
+
+    Double_t maxval = 1;
+    if (mc < fNBkg) maxval = fOutBkgMETEffTH1DHists[0][mc]->GetMaximum();
+    else maxval = fOutBkgMETEffTH1DHists[0][mc-fNBkg]->GetMaximum();
+
+    // plots with all met shapes
+    if (mc < fNBkg){
+      for (UInt_t th1d = 0; th1d < fNMETPlots; th1d++){
+        if (th1d == 0){
+          fOutBkgMETEffTH1DHists[th1d][mc]->SetMaximum(maxval*10);
+          fOutBkgMETEffTH1DHists[th1d][mc]->SetMinimum(1E-3);
+          fOutBkgMETEffTH1DHists[th1d][mc]->Draw("HIST"); 
+        }
+        else fOutBkgMETEffTH1DHists[th1d][mc]->Draw("HIST SAME");
+        fOutBkgMETEffTH1DHists[th1d][mc]->GetXaxis()->SetRangeUser(0,350); 
+      }
+      fOutBkgMETEffTH1DHists[0][mc]->SetLineWidth(2); 
+      fOutBkgMETEffTH1DHists[0][mc]->Draw("HIST SAME"); 
+    }
+    // these have the reduced plots
+    else {
+      for (UInt_t th1d = 0; th1d < fNMETPlots; th1d++){
+        if (th1d == 0){ 
+          fOutBkgMETEffTH1DHists[th1d][mc-fNBkg]->SetMaximum(maxval);
+          fOutBkgMETEffTH1DHists[th1d][mc-fNBkg]->SetMinimum(1E-3);
+          fOutBkgMETEffTH1DHists[th1d][mc-fNBkg]->Draw("HIST"); 
+        }
+        else if (th1d == 1 || th1d == 2 || th1d == 11 || th1d == 12 ) fOutBkgMETEffTH1DHists[th1d][mc-fNBkg]->Draw("HIST SAME");
+      }
+      fOutBkgMETEffTH1DHists[0][mc-fNBkg]->SetLineWidth(2); 
+      fOutBkgMETEffTH1DHists[0][mc-fNBkg]->Draw("HIST SAME"); 
+    }
+
+    fBkgMETEffLegend[mc]->Draw("SAME");
+    // make right format for output plots & save them
+    fOutBkgMETEffPad[mc]->SetLogy(1); 
+    CMSLumi(fOutBkgMETEffCanvas[mc],11,lumi);
+    if (mc < fNBkg) fOutBkgMETEffCanvas[mc]->SaveAs(Form("%scomb/METEff_%s.%s",fOutDir.Data(),fBkgNames[mc].Data(),fType.Data()));
+    else fOutBkgMETEffCanvas[mc]->SaveAs(Form("%scomb/METEff_%s_Reduced.%s",fOutDir.Data(),fBkgNames[mc-fNBkg].Data(),fType.Data()));
+    fOutFile->cd();
+    if (mc < fNBkg) fOutBkgMETEffCanvas[mc]->Write(Form("METEff_%s",fBkgNames[mc].Data()));
+    else fOutBkgMETEffCanvas[mc]->Write(Form("METEff_%s_Reduced",fBkgNames[mc-fNBkg].Data()));
+
+    delete fBkgMETEffLegend[mc];
+    delete fOutBkgMETEffPad[mc];
+    delete fOutBkgMETEffCanvas[mc];
+  }
+
+  for (UInt_t mc = 0; mc < fNBkg; mc++){
+    for (UInt_t th1d = 0; th1d < fNMETPlots; th1d++){ 
+      if (mc < fNBkg) delete fOutBkgMETEffTH1DHists[th1d][mc]; 
+    }
+  }
+
+}// end Combiner::MakeMETEffPlots
+
 
 
 void Combiner::MakeEffPlots(){
@@ -373,6 +928,10 @@ void Combiner::DrawCanvasStack(const UInt_t th1d, const Bool_t isLogY){
   fOutTH1DCanvases[th1d]->cd();
   fOutTH1DStackPads[th1d]->Draw();
   fOutTH1DStackPads[th1d]->cd();
+
+
+
+
 
  /* for (UInt_t mc = 0; mc < fNSig; mc++){
     fInSigTH1DHists[th1d][mc]->Scale(lumi);
@@ -657,6 +1216,8 @@ void Combiner::InitCanvAndHists(){
     fTH1DLegends[th1d]->SetLineWidth(2);
   }
 
+
+  GJetsClone.resize(fNTH1D);
   fOutTH1DCanvases.resize(fNTH1D);
   fOutTH1DStackPads.resize(fNTH1D);
   fOutBkgTH1DHists.resize(fNTH1D);
@@ -701,13 +1262,12 @@ void Combiner::InitTH1DNames(){
   fTH1DNames.push_back("nvtx"); 
   fIndexNvtx = fTH1DNames.size()-1;
   fTH1DNames.push_back("t1pfmetphi");
-  fTH1DNames.push_back("t1pfmet");
   //fTH1DNames.push_back("pfmetphi");
   //fTH1DNames.push_back("pfmet");
   //fTH1DNames.push_back("calometphi");
   //fTH1DNames.push_back("calomet");
 
-  // photon variables
+  //// photon variables
   fTH1DNames.push_back("pt1");
   fTH1DNames.push_back("pt2");     
   fTH1DNames.push_back("eta1");
@@ -734,12 +1294,69 @@ void Combiner::InitTH1DNames(){
     //fTH1DNames.push_back("eleveto2");
     //fTH1DNames.push_back("phi1_pho2pass");
     //fTH1DNames.push_back("phi2_pho1pass");
+    fTH1DNames.push_back("t1pfmetCorr");
+    fTH1DNames.push_back("t1pfmetphiCorr");
     fTH1DNames.push_back("t1pfmet_zoom");
+    fTH1DNames.push_back("t1pfmetSumEt");
+    fTH1DNames.push_back("t1pfmet_partblind");
+    fTH1DNames.push_back("t1pfmetCorr_partblind");
+    
+    fTH1DNames.push_back("t1pfmet");
+    fIndexMET = fTH1DNames.size()-1;
+    fTH1DNames.push_back("JetEnUp");
+    fTH1DNames.push_back("JetEnDown");
+    fTH1DNames.push_back("JetResUp");
+    fTH1DNames.push_back("JetResDown");
+    fTH1DNames.push_back("MuonEnUp");
+    fTH1DNames.push_back("MuonEnDown");
+    fTH1DNames.push_back("EleEnUp");
+    fTH1DNames.push_back("EleEnDown");
+    fTH1DNames.push_back("TauEnUp");
+    fTH1DNames.push_back("TauEnDown");
+    fTH1DNames.push_back("PhoEnUp");
+    fTH1DNames.push_back("PhoEnDown");
+    fTH1DNames.push_back("UnclEnUp");
+    fTH1DNames.push_back("UnclEnDown");
+
+    fTH1DNames.push_back("ptJet1");
+    fTH1DNames.push_back("ptJet2");
+    fTH1DNames.push_back("phiJet1");
+    fTH1DNames.push_back("phiJet2");
+    fTH1DNames.push_back("etaJet1");
+    fTH1DNames.push_back("etaJet2");
+    fTH1DNames.push_back("dphiJet1MET");
+    fTH1DNames.push_back("dphiJet2MET");
+    fTH1DNames.push_back("absdphiJet1MET");
+    fTH1DNames.push_back("absdphiJet2MET");
+    fTH1DNames.push_back("nvtx_afterJetCut");
+    fTH1DNames.push_back("ptgg_afterJetCut");
+    fTH1DNames.push_back("mgg_afterJetCut");
+
+    fTH1DNames.push_back("met_afterJetCut");
+    fTH1DNames.push_back("metCorr_afterJetCut");
+    fTH1DNames.push_back("met_afterggMETCut");
+    fTH1DNames.push_back("metCorr_afterggMETCut");
+    fTH1DNames.push_back("met_afterJetMETCut");
+    fTH1DNames.push_back("metCorr_afterJetMETCut");
+    fTH1DNames.push_back("met_afterJetMETPhiCut");
+    fTH1DNames.push_back("metCorr_afterJetMETPhiCut");
+
+    fTH1DNames.push_back("met_IsolateMET");
+    fTH1DNames.push_back("metCorr_IsolateMET");
+    fTH1DNames.push_back("met_Isolategg");
+    fTH1DNames.push_back("metCorr_Isolategg");
+    fTH1DNames.push_back("met_IsolateJET1");
+    fTH1DNames.push_back("metCorr_IsolateJET1");
+
+    fTH1DNames.push_back("met_IsolateALL");
+    fTH1DNames.push_back("metCorr_IsolateALL");
+
     //fTH1DNames.push_back("t1pfmet_zoom_wofil");
     fTH1DNames.push_back("mgg_selt1pfmet");
     fTH1DNames.push_back("t1pfmet_selmgg");
     fTH1DNames.push_back("phigg");
     fTH1DNames.push_back("dphi_ggmet");
+    fTH1DNames.push_back("absdphi_ggJet1");
     fTH1DNames.push_back("absdphi_ggmet");
     fIndexDphi = fTH1DNames.size()-1;
     fTH1DNames.push_back("deta_gg");

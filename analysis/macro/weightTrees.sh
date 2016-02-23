@@ -6,28 +6,28 @@ echo "Adding weights for " $lumi " pb-1..."
 root -l -b <<EOF
 .L addWeightsToTree.cc++  
  
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/GJet_Pt-20to40.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/GJet_Pt-40toInf.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/QCD_Pt-30to40.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/QCD_Pt-30toInf.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/QCD_Pt-40toInf.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/GluGluHToGG.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/DiPhoton.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/VH.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/DYJetsToLL.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/ttHJetToGG.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/VBFHToGG.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/GJet_Pt-20to40.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/GJet_Pt-40toInf.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/QCD_Pt-30to40.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/QCD_Pt-30toInf.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/QCD_Pt-40toInf.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/GluGluHToGG.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/DiPhoton.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/VH.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/DYJetsToLL.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/ttHJetToGG.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/VBFHToGG.root", $lumi);
 
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/2HDM_mZP600.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/2HDM_mZP800.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/2HDM_mZP1000.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/2HDM_mZP1200.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/2HDM_mZP1400.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/2HDM_mZP1700.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/2HDM_mZP2000.root", $lumi);
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/2HDM_mZP2500.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/2HDM_mZP600.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/2HDM_mZP800.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/2HDM_mZP1000.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/2HDM_mZP1200.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/2HDM_mZP1400.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/2HDM_mZP1700.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/2HDM_mZP2000.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/2HDM_mZP2500.root", $lumi);
 
-addWeights("data/25ns_v1-1-0_ReReco_wSyst/DoubleEG.root", $lumi);
+addWeights("data/25ns_v1-1-0_ReReco_wJETinfo/DoubleEG.root", $lumi);
 
 .q
 

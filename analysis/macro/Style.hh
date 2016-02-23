@@ -20,6 +20,7 @@
 #include <map>
 
 typedef std::vector<Double_t> 		DblVec;
+typedef std::vector<DblVec> 		DblVecVec;
 typedef std::map<TString,Color_t> 	ColorMap;
 typedef std::vector<TString> 		TStrVec;
 typedef std::pair<TString,Int_t>	SamplePair;

@@ -1,12 +1,37 @@
 #! /bin/sh
 #run extractJSONS.py for all samples in file
 
-# FLASHgg version 1_0_0 for 25ns
-#python extractFilesAndWeight.py -i lists_25ns_v1_1_0/Data/DoubleEG.json		-o DoubleEG		-d lists_25ns_v1_1_0
-#python extractFilesAndWeight.py	-i lists_25ns_v1_1_0/MC/ZpZH.json		-o ZpZH			-d lists_25ns_v1_1_0
-python extractFilesAndWeight.py	-i lists_25ns_v1_1_0/MC/ttHJetToGG_M125.json		-o ttHJetToGG		-d lists_25ns_v1_1_0
-python extractFilesAndWeight.py	-i lists_25ns_v1_1_0/MC/VBFHToGG_M-125.json		-o VBFHToGG		-d lists_25ns_v1_1_0
+# FLASHgg version 1_1_0 w/ MET syst for 25ns
+#python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/Data/DoubleEG.json	-o DoubleEG		-d lists_25ns_v1_1_0_wMETsys
 
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/GJet_Pt-20to40.json	-o GJet_Pt-20to40	-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/GJet_Pt-40toInf.json	-o GJet_Pt-40toInf	-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/VHToGG_M125.json	-o VH			-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/QCD_Pt-30to40.json	-o QCD_Pt-30to40	-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/QCD_Pt-40toInf.json	-o QCD_Pt-40toInf	-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/QCD_Pt-30toInf.json	-o QCD_Pt-30toInf	-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/DiPhoton.json		-o DiPhoton		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/GluGluHToGG_M-125.json	-o GluGluHToGG		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/DYJetsToLL.json		-o DYJetsToLL		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/ttHJetToGG_M125.json	-o ttHJetToGG		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/VBFHToGG_M-125.json	-o VBFHToGG		-d lists_25ns_v1_1_0_wMETsys
+
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/2HDM_MZP600.json	-o 2HDM_MZP600		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/2HDM_MZP800.json	-o 2HDM_MZP800		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/2HDM_MZP1000.json	-o 2HDM_MZP1000		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/2HDM_MZP1200.json	-o 2HDM_MZP1200		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/2HDM_MZP1400.json	-o 2HDM_MZP1400		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/2HDM_MZP1700.json	-o 2HDM_MZP1700		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/2HDM_MZP2500.json	-o 2HDM_MZP2500		-d lists_25ns_v1_1_0_wMETsys
+
+
+
+
+
+
+# FLASHgg version 1_0_0 for 25ns
+#python extractFilesAndWeight.py -i lists_25ns_v1_1_0/Data/DoubleEG.json	-o DoubleEG		-d lists_25ns_v1_1_0
+#
 #python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/GJet_Pt-20to40.json	-o GJet_Pt-20to40	-d lists_25ns_v1_1_0
 #python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/GJet_Pt-40toInf.json	-o GJet_Pt-40toInf	-d lists_25ns_v1_1_0
 #python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/VHToGG_M125.json	-o VH			-d lists_25ns_v1_1_0
@@ -15,7 +40,11 @@ python extractFilesAndWeight.py	-i lists_25ns_v1_1_0/MC/VBFHToGG_M-125.json		-o 
 #python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/QCD_Pt-30toInf.json	-o QCD_Pt-30toInf	-d lists_25ns_v1_1_0
 #python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/DiPhoton.json		-o DiPhoton		-d lists_25ns_v1_1_0
 #python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/GluGluHToGG_M-125.json	-o GluGluHToGG		-d lists_25ns_v1_1_0
-#python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/DYJetsToLL.json		-o DYJetsToLL		-d lists_25ns_v1_1_0
+#python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/DYJetsToLL.json	-o DYJetsToLL		-d lists_25ns_v1_1_0
+#python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/ttHJetToGG_M125.json	-o ttHJetToGG		-d lists_25ns_v1_1_0
+#python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/VBFHToGG_M-125.json	-o VBFHToGG		-d lists_25ns_v1_1_0
+#python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/VH.json		-o privVH		-d lists_25ns_v1_1_0 # priv VH for MC validation
+#python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/ZpZH.json		-o ZpZH			-d lists_25ns_v1_1_0 # priv ZpZH for MC validation
 #
 #python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/2HDM_MZp-600.json	-o 2HDM_MZP600		-d lists_25ns_v1_1_0
 #python extractFilesAndWeight.py -i lists_25ns_v1_1_0/MC/2HDM_MZp-1000.json	-o 2HDM_MZP1000		-d lists_25ns_v1_1_0

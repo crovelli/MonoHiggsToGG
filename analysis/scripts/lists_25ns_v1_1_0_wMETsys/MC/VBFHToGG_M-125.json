@@ -1,0 +1,24 @@
+    "/VBFHToGG_M-125_13TeV_powheg_pythia8/soffi-RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1-03230d6c14c428642a12cebdbe2d827f/USER": {
+        "files": [
+            {
+                "bad": false, 
+                "name": "/store/group/soffi/VBFHToGG_M-125_13TeV_powheg_pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160211_163104/0000/myMicroAODOutputFile_1.root", 
+                "nevents": 203985, 
+                "totEvents": 202232, 
+                "weights": 756034.5
+                "name": "/store/group/soffi/VBFHToGG_M-125_13TeV_powheg_pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160211_163104/0000/myMicroAODOutputFile_2.root", 
+                "nevents": 176415, 
+                "totEvents": 174803, 
+                "weights": 653293.4375
+                "name": "/store/group/soffi/VBFHToGG_M-125_13TeV_powheg_pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160211_163104/0000/myMicroAODOutputFile_3.root", 
+                "nevents": 201315, 
+                "totEvents": 199549, 
+                "weights": 745958.125
+                "name": "/store/group/soffi/VBFHToGG_M-125_13TeV_powheg_pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160211_163104/0000/myMicroAODOutputFile_4.root", 
+                "nevents": 194895, 
+                "totEvents": 193172, 
+                "weights": 722118.0
+                "name": "/store/group/soffi/VBFHToGG_M-125_13TeV_powheg_pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160211_163104/0000/myMicroAODOutputFile_5.root", 
+                "nevents": 215390, 
+                "totEvents": 213533, 
+                "weights": 798438.5

@@ -17,7 +17,8 @@ analysis/scripts/list*/
 
 #ignore output from limit tools 
 analysis/limits/2HDM/*
-
+#ignore output from finding avg scaling
+analysis/plugins/Tables_Scaling/*
 #ignore files created by batch jobs
 analysis/scripts/job*
 analysis/scripts/outputjobs*

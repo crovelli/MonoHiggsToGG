@@ -3,6 +3,10 @@
 
 # FLASHgg version 1_1_0 w/ MET syst for 25ns
 #python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/Data/DoubleEG.json	-o DoubleEG		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/TTGJets.json		-o TTGJets		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/TGJets.json		-o TGJets		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/WGToLNuG.json		-o WGToLNuG		-d lists_25ns_v1_1_0_wMETsys
+python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/ZGTo2LG.json		-o ZGTo2LG		-d lists_25ns_v1_1_0_wMETsys
 
 python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/GJet_Pt-20to40.json	-o GJet_Pt-20to40	-d lists_25ns_v1_1_0_wMETsys
 python extractFilesAndWeight.py -i lists_25ns_v1_1_0_wMETsys/MC/GJet_Pt-40toInf.json	-o GJet_Pt-40toInf	-d lists_25ns_v1_1_0_wMETsys

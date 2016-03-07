@@ -79,15 +79,15 @@ The analysis is done in CMSSW_7_4_15
 - `./main` (to run)
 
 In main.cpp set the following bools:
-- (makePURWfiles) : calls ReweightPU.cpp --- makes PURW files for samples)
-- (doReweightPU)  : opens PURW files     --- does PURW instead of weighting=1
-- (doMETCorr)	  : apply MET phi corr   --- MET phi correction is applied to t1pfmet 
-- (doBlind)	  : blinds data in Plots --- blinds the data mass & met distributions
-- (doQCDrescale)  : rescale GJet for QCD --- rescale GJet by QCD integral to estimate the QCD contribution
+- (makePURWfiles) : calls ReweightPU.cpp  --- makes PURW files for samples)
+- (doReweightPU)  : opens PURW files      --- does PURW instead of weighting=1
+- (doMETCorr)	  : calls METCorr2016.cpp --- MET phi correction is calculated to t1pfmet 
+- (doBlind)	  : blinds data in Plots  --- blinds the data mass & met distributions
+- (doQCDrescale)  : rescale GJet for QCD  --- rescale GJet by QCD integral to estimate the QCD contribution
 
-- (doPlots) 	  : calls Plotter.cpp 	 --- makes the histos for each sample individually
-- (doComb)  	  : calls Combiner.cpp 	 --- overlays and stacks samples in plots
-- (doABCD)	  : calls ABCDMethod.cpp --- does the ABCD/C&C analysis
+- (doPlots) 	  : calls Plotter.cpp 	  --- makes the histos for each sample individually
+- (doComb)  	  : calls Combiner.cpp 	  --- overlays and stacks samples in plots
+- (doABCD)	  : calls ABCDMethod.cpp  --- does the ABCD/C&C analysis
 
 The style for the plots is set with Style.cpp.
 

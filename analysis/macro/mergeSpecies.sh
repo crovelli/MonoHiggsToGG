@@ -3,9 +3,9 @@
 
 #mkdir -p data/mergedFinal
 
-hadd data/25ns_v1-1-0_ReReco_wJETinfo/GJets.root	data/25ns_v1-1-0_ReReco_wJETinfo/GJet_Pt-20to40.root	data/25ns_v1-1-0_ReReco_wJETinfo/GJet_Pt-40toInf.root 
-hadd data/25ns_v1-1-0_ReReco_wJETinfo/QCD.root		data/25ns_v1-1-0_ReReco_wJETinfo/QCD_Pt-30to40.root	data/25ns_v1-1-0_ReReco_wJETinfo/QCD_Pt-30toInf.root	data/25ns_v1-1-0_ReReco_wJETinfo/QCD_Pt-40toInf.root 
-#hadd data/25ns_v1-1-0_ReReco_wJETinfo/DoubleEG.root	data/25ns_v1-1-0_ReReco_wJETinfo/DoubleEG_05Oct.root	data/25ns_v1-1-0_ReReco_wJETinfo/DoubleEG_PromptV4.root 
+hadd data/25ns_v1-1-0_ReReco_wAllJetInfo/GJets.root	data/25ns_v1-1-0_ReReco_wAllJetInfo/GJet_Pt-20to40.root	data/25ns_v1-1-0_ReReco_wAllJetInfo/GJet_Pt-40toInf.root 
+hadd data/25ns_v1-1-0_ReReco_wAllJetInfo/QCD.root		data/25ns_v1-1-0_ReReco_wAllJetInfo/QCD_Pt-30to40.root	data/25ns_v1-1-0_ReReco_wAllJetInfo/QCD_Pt-30toInf.root	data/25ns_v1-1-0_ReReco_wAllJetInfo/QCD_Pt-40toInf.root 
+#hadd data/25ns_v1-1-0_ReReco_wAllJetInfo/DoubleEG.root	data/25ns_v1-1-0_ReReco_wAllJetInfo/DoubleEG_05Oct.root	data/25ns_v1-1-0_ReReco_wAllJetInfo/DoubleEG_PromptV4.root 
 
 #hadd data/25ns_v7_LooseSel/DoubleEG.root	data/25ns_v7_LooseSel/DoubleEG_p.root	data/25ns_v7_LooseSel/DoubleEG_0.root	data/25ns_v7_LooseSel/DoubleEG_1.root	data/25ns_v7_LooseSel/DoubleEG_2.root 
 

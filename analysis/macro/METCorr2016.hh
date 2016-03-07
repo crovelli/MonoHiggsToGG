@@ -333,7 +333,7 @@ public :
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
    virtual void     Init(TTree *tree);
-   DblVec  Loop();
+   DblVec  Loop(TString inDir, TString outFile);
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
 

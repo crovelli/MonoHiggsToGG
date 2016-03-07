@@ -19,7 +19,7 @@
 
 
 indir="../macro/data/25ns_v1-1-0_ReReco/"
-outdir="ntuples4fit_newSelMETcat"
+outdir="ntuples4fit_pho_met50_100"
 
 mkdir -p $outdir
 

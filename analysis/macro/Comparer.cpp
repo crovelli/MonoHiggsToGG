@@ -62,13 +62,14 @@ Comparer::Comparer( SamplePairVec Samples, const ColorMap colorMap, const Double
   fSampleIDs.push_back(SamplePair("2HDM_mZP1000",102)); 
   fSampleIDs.push_back(SamplePair("2HDM_mZP1200",103)); 
   fSampleIDs.push_back(SamplePair("2HDM_mZP1400",104)); 
+  fSampleIDs.push_back(SamplePair("2HDM_mZP1700",105)); 
+  //fSampleIDs.push_back(SamplePair("2HDM_mZP2000",106));  
+  fSampleIDs.push_back(SamplePair("2HDM_mZP2500",107));  
   //fSampleIDs.push_back(SamplePair("DMHtoGG_M1",0)); 
   //fSampleIDs.push_back(SamplePair("DMHtoGG_M10",0)); 
   //fSampleIDs.push_back(SamplePair("DMHtoGG_M100",0)); 
   //fSampleIDs.push_back(SamplePair("DMHtoGG_M1000",0)); 
-  //fSampleIDs.push_back(SamplePair("2HDM_mZP1700",105)); 
-  //fSampleIDs.push_back(SamplePair("2HDM_mZP2000",106));  
-  //fSampleIDs.push_back(SamplePair("2HDM_mZP2500",107));  
+
 
   // Read sample names
   for (SamplePairVecIter iter = Samples.begin(); iter != Samples.end(); ++iter){

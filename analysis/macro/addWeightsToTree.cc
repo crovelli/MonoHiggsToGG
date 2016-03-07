@@ -18,6 +18,7 @@ void addWeights(const char* filename, float lumiForW, float massTrue=1) {
   TH1F  *h_entries = 0;
   TH1F  *h_sumW = 0;
   TH1F  *h_selection = 0;
+  TH1F  *h_selection_unwgt = 0;
 
   fileOrig = TFile::Open(filename);
   if( fileOrig ) {
@@ -129,11 +130,57 @@ void addWeights(const char* filename, float lumiForW, float massTrue=1) {
   Float_t         phiJetLead;
   Float_t         massJetLead;
   Int_t           indexJetLead;
+  Float_t         NEMfracJet1;
+  Float_t         CEMfracJet1;
+  Float_t         ELfracJet1;
+  Float_t         CHfracJet1;
+  Float_t         NHfracJet1;
+  Float_t         PHfracJet1;
+  Float_t         MUfracJet1;
+  Int_t           CHmultJet1;
+  Int_t           NEmultJet1;
   Float_t         ptJetSubLead;
   Float_t         etaJetSubLead;
   Float_t         phiJetSubLead;
   Float_t         massJetSubLead;
   Int_t           indexJetSubLead;
+  Float_t         NEMfracJet2;
+  Float_t         CEMfracJet2;
+  Float_t         ELfracJet2;
+  Float_t         CHfracJet2;
+  Float_t         NHfracJet2;
+  Float_t         PHfracJet2;
+  Float_t         MUfracJet2;
+  Int_t           CHmultJet2;
+  Int_t           NEmultJet2;
+  Float_t         ptJet3;
+  Float_t         etaJet3;
+  Float_t         phiJet3;
+  Float_t         massJet3;
+  Int_t           indexJet3;
+  Float_t         NEMfracJet3;
+  Float_t         CEMfracJet3;
+  Float_t         ELfracJet3;
+  Float_t         CHfracJet3;
+  Float_t         NHfracJet3;
+  Float_t         PHfracJet3;
+  Float_t         MUfracJet3;
+  Int_t           CHmultJet3;
+  Int_t           NEmultJet3;
+  Float_t         ptJet4;
+  Float_t         etaJet4;
+  Float_t         phiJet4;
+  Float_t         massJet4;
+  Int_t           indexJet4;
+  Float_t         NEMfracJet4;
+  Float_t         CEMfracJet4;
+  Float_t         ELfracJet4;
+  Float_t         CHfracJet4;
+  Float_t         NHfracJet4;
+  Float_t         PHfracJet4;
+  Float_t         MUfracJet4;
+  Int_t           CHmultJet4;
+  Int_t           NEmultJet4;
   Int_t           vtxIndex;
   Float_t         higgsVtxX;
   Float_t         higgsVtxY;
@@ -193,6 +240,8 @@ void addWeights(const char* filename, float lumiForW, float massTrue=1) {
   Int_t           metF_HBHENoiseIso;    
   Int_t           metF_CSC;    
   Int_t           metF_eeBadSC;    
+  Int_t		  metF_MuonBadTrack;
+  Int_t		  metF_HadronTrackRes;
   Float_t         massCorrSmear;
   Float_t         massCorrSmearUp;
   Float_t         massCorrSmearDown;
@@ -284,11 +333,57 @@ void addWeights(const char* filename, float lumiForW, float massTrue=1) {
   TBranch        *b_phiJetLead;   //!
   TBranch        *b_massJetLead;   //!
   TBranch        *b_indexJetLead;   //!
+  TBranch        *b_NEMfracJet1;   //!
+  TBranch        *b_CEMfracJet1;   //!
+  TBranch        *b_ELfracJet1;   //!
+  TBranch        *b_CHfracJet1;   //!
+  TBranch        *b_NHfracJet1;   //!
+  TBranch        *b_PHfracJet1;   //!
+  TBranch        *b_MUfracJet1;   //!
+  TBranch        *b_CHmultJet1;   //!
+  TBranch        *b_NEmultJet1;   //!
   TBranch        *b_ptJetSubLead;   //!
   TBranch        *b_etaJetSubLead;   //!
   TBranch        *b_phiJetSubLead;   //!
   TBranch        *b_massJetSubLead;   //!
   TBranch        *b_indexJetSubLead;   //!
+  TBranch        *b_NEMfracJet2;   //!
+  TBranch        *b_CEMfracJet2;   //!
+  TBranch        *b_ELfracJet2;   //!
+  TBranch        *b_CHfracJet2;   //!
+  TBranch        *b_NHfracJet2;   //!
+  TBranch        *b_PHfracJet2;   //!
+  TBranch        *b_MUfracJet2;   //!
+  TBranch        *b_CHmultJet2;   //!
+  TBranch        *b_NEmultJet2;   //!
+  TBranch        *b_ptJet3;   //!
+  TBranch        *b_etaJet3;   //!
+  TBranch        *b_phiJet3;   //!
+  TBranch        *b_massJet3;   //!
+  TBranch        *b_indexJet3;   //!
+  TBranch        *b_NEMfracJet3;   //!
+  TBranch        *b_CEMfracJet3;   //!
+  TBranch        *b_ELfracJet3;   //!
+  TBranch        *b_CHfracJet3;   //!
+  TBranch        *b_NHfracJet3;   //!
+  TBranch        *b_PHfracJet3;   //!
+  TBranch        *b_MUfracJet3;   //!
+  TBranch        *b_CHmultJet3;   //!
+  TBranch        *b_NEmultJet3;   //!
+  TBranch        *b_ptJet4;   //!
+  TBranch        *b_etaJet4;   //!
+  TBranch        *b_phiJet4;   //!
+  TBranch        *b_massJet4;   //!
+  TBranch        *b_indexJet4;   //!
+  TBranch        *b_NEMfracJet4;   //!
+  TBranch        *b_CEMfracJet4;   //!
+  TBranch        *b_ELfracJet4;   //!
+  TBranch        *b_CHfracJet4;   //!
+  TBranch        *b_NHfracJet4;   //!
+  TBranch        *b_PHfracJet4;   //!
+  TBranch        *b_MUfracJet4;   //!
+  TBranch        *b_CHmultJet4;   //!
+  TBranch        *b_NEmultJet4;   //!
   TBranch        *b_genmatch1; 
   TBranch        *b_genmatch2; 
   TBranch        *b_geniso1; 
@@ -349,6 +444,8 @@ void addWeights(const char* filename, float lumiForW, float massTrue=1) {
   TBranch        *b_metF_HBHENoiseIso;    
   TBranch        *b_metF_CSC;    
   TBranch        *b_metF_eeBadSC;    
+  TBranch        *b_metF_MuonBadTrack;    
+  TBranch        *b_metF_HadronTrackRes;    
   TBranch        *b_higgsVtxX;   //!
   TBranch        *b_higgsVtxY;   //!
   TBranch        *b_higgsVtxZ;   //!
@@ -447,11 +544,57 @@ void addWeights(const char* filename, float lumiForW, float massTrue=1) {
   treeOrig->SetBranchAddress("phiJetLead", &phiJetLead, &b_phiJetLead);
   treeOrig->SetBranchAddress("massJetLead", &massJetLead, &b_massJetLead);
   treeOrig->SetBranchAddress("indexJetLead", &indexJetLead, &b_indexJetLead);
+  treeOrig->SetBranchAddress("NEMfracJet1", &NEMfracJet1, &b_NEMfracJet1);
+  treeOrig->SetBranchAddress("CEMfracJet1", &CEMfracJet1, &b_CEMfracJet1);
+  treeOrig->SetBranchAddress("ELfracJet1", &ELfracJet1, &b_ELfracJet1);
+  treeOrig->SetBranchAddress("CHfracJet1", &CHfracJet1, &b_CHfracJet1);
+  treeOrig->SetBranchAddress("NHfracJet1", &NHfracJet1, &b_NHfracJet1);
+  treeOrig->SetBranchAddress("PHfracJet1", &PHfracJet1, &b_PHfracJet1);
+  treeOrig->SetBranchAddress("MUfracJet1", &MUfracJet1, &b_MUfracJet1);
+  treeOrig->SetBranchAddress("CHmultJet1", &CHmultJet1, &b_CHmultJet1);
+  treeOrig->SetBranchAddress("NEmultJet1", &NEmultJet1, &b_NEmultJet1);
   treeOrig->SetBranchAddress("ptJetSubLead", &ptJetSubLead, &b_ptJetSubLead);
   treeOrig->SetBranchAddress("etaJetSubLead", &etaJetSubLead, &b_etaJetSubLead);
   treeOrig->SetBranchAddress("phiJetSubLead", &phiJetSubLead, &b_phiJetSubLead);
   treeOrig->SetBranchAddress("massJetSubLead", &massJetSubLead, &b_massJetSubLead);
   treeOrig->SetBranchAddress("indexJetSubLead", &indexJetSubLead, &b_indexJetSubLead);
+  treeOrig->SetBranchAddress("NEMfracJet2", &NEMfracJet2, &b_NEMfracJet2);
+  treeOrig->SetBranchAddress("CEMfracJet2", &CEMfracJet2, &b_CEMfracJet2);
+  treeOrig->SetBranchAddress("ELfracJet2", &ELfracJet2, &b_ELfracJet2);
+  treeOrig->SetBranchAddress("CHfracJet2", &CHfracJet2, &b_CHfracJet2);
+  treeOrig->SetBranchAddress("NHfracJet2", &NHfracJet2, &b_NHfracJet2);
+  treeOrig->SetBranchAddress("PHfracJet2", &PHfracJet2, &b_PHfracJet2);
+  treeOrig->SetBranchAddress("MUfracJet2", &MUfracJet2, &b_MUfracJet2);
+  treeOrig->SetBranchAddress("CHmultJet2", &CHmultJet2, &b_CHmultJet2);
+  treeOrig->SetBranchAddress("NEmultJet2", &NEmultJet2, &b_NEmultJet2);
+  treeOrig->SetBranchAddress("ptJet3", &ptJet3, &b_ptJet3);
+  treeOrig->SetBranchAddress("etaJet3", &etaJet3, &b_etaJet3);
+  treeOrig->SetBranchAddress("phiJet3", &phiJet3, &b_phiJet3);
+  treeOrig->SetBranchAddress("massJet3", &massJet3, &b_massJet3);
+  treeOrig->SetBranchAddress("indexJet3", &indexJet3, &b_indexJet3);
+  treeOrig->SetBranchAddress("NEMfracJet3", &NEMfracJet3, &b_NEMfracJet3);
+  treeOrig->SetBranchAddress("CEMfracJet3", &CEMfracJet3, &b_CEMfracJet3);
+  treeOrig->SetBranchAddress("ELfracJet3", &ELfracJet3, &b_ELfracJet3);
+  treeOrig->SetBranchAddress("CHfracJet3", &CHfracJet3, &b_CHfracJet3);
+  treeOrig->SetBranchAddress("NHfracJet3", &NHfracJet3, &b_NHfracJet3);
+  treeOrig->SetBranchAddress("PHfracJet3", &PHfracJet3, &b_PHfracJet3);
+  treeOrig->SetBranchAddress("MUfracJet3", &MUfracJet3, &b_MUfracJet3);
+  treeOrig->SetBranchAddress("CHmultJet3", &CHmultJet3, &b_CHmultJet3);
+  treeOrig->SetBranchAddress("NEmultJet3", &NEmultJet3, &b_NEmultJet3);
+  treeOrig->SetBranchAddress("ptJet4", &ptJet4, &b_ptJet4);
+  treeOrig->SetBranchAddress("etaJet4", &etaJet4, &b_etaJet4);
+  treeOrig->SetBranchAddress("phiJet4", &phiJet4, &b_phiJet4);
+  treeOrig->SetBranchAddress("massJet4", &massJet4, &b_massJet4);
+  treeOrig->SetBranchAddress("indexJet4", &indexJet4, &b_indexJet4);
+  treeOrig->SetBranchAddress("NEMfracJet4", &NEMfracJet4, &b_NEMfracJet4);
+  treeOrig->SetBranchAddress("CEMfracJet4", &CEMfracJet4, &b_CEMfracJet4);
+  treeOrig->SetBranchAddress("ELfracJet4", &ELfracJet4, &b_ELfracJet4);
+  treeOrig->SetBranchAddress("CHfracJet4", &CHfracJet4, &b_CHfracJet4);
+  treeOrig->SetBranchAddress("NHfracJet4", &NHfracJet4, &b_NHfracJet4);
+  treeOrig->SetBranchAddress("PHfracJet4", &PHfracJet4, &b_PHfracJet4);
+  treeOrig->SetBranchAddress("MUfracJet4", &MUfracJet4, &b_MUfracJet4);
+  treeOrig->SetBranchAddress("CHmultJet4", &CHmultJet4, &b_CHmultJet4);
+  treeOrig->SetBranchAddress("NEmultJet4", &NEmultJet4, &b_NEmultJet4);
   treeOrig->SetBranchAddress("vtxIndex", &vtxIndex, &b_vtxIndex);
   treeOrig->SetBranchAddress("vtxX", &vtxX, &b_vtxX);
   treeOrig->SetBranchAddress("vtxY", &vtxY, &b_vtxY);
@@ -508,6 +651,8 @@ void addWeights(const char* filename, float lumiForW, float massTrue=1) {
   treeOrig->SetBranchAddress("metF_HBHENoiseIso",&metF_HBHENoiseIso,&b_metF_HBHENoiseIso);
   treeOrig->SetBranchAddress("metF_CSC",&metF_CSC,&b_metF_CSC);
   treeOrig->SetBranchAddress("metF_eeBadSC",&metF_eeBadSC,&b_metF_eeBadSC);
+  treeOrig->SetBranchAddress("metF_MuonBadTrack",&metF_MuonBadTrack,&b_metF_MuonBadTrack);
+  treeOrig->SetBranchAddress("metF_HadronTrackRes",&metF_HadronTrackRes,&b_metF_HadronTrackRes);
   treeOrig->SetBranchAddress("higgsVtxX", &higgsVtxX, &b_higgsVtxX);
   treeOrig->SetBranchAddress("higgsVtxY", &higgsVtxY, &b_higgsVtxY);
   treeOrig->SetBranchAddress("higgsVtxZ", &higgsVtxZ, &b_higgsVtxZ);
@@ -623,11 +768,57 @@ void addWeights(const char* filename, float lumiForW, float massTrue=1) {
     theTreeNew->Branch("phiJetLead", &phiJetLead, "phiJetLead/F");
     theTreeNew->Branch("massJetLead", &massJetLead, "massJetLead/F");
     theTreeNew->Branch("indexJetLead", &indexJetLead, "indexJetLead/I");
+    theTreeNew->Branch("NEMfracJet1", &NEMfracJet1, "NEMfracJet1/F");
+    theTreeNew->Branch("CEMfracJet1", &CEMfracJet1, "CEMfracJet1/F");
+    theTreeNew->Branch("ELfracJet1", &ELfracJet1, "ELfracJet1/F");
+    theTreeNew->Branch("CHfracJet1", &CHfracJet1, "CHfracJet1/F");
+    theTreeNew->Branch("NHfracJet1", &NHfracJet1, "NHfracJet1/F");
+    theTreeNew->Branch("PHfracJet1", &PHfracJet1, "PHfracJet1/F");
+    theTreeNew->Branch("MUfracJet1", &MUfracJet1, "MUfracJet1/F");
+    theTreeNew->Branch("CHmultJet1", &CHmultJet1, "CHmultJet1/I");
+    theTreeNew->Branch("NEmultJet1", &NEmultJet1, "NEmultJet1/I");
     theTreeNew->Branch("ptJetSubLead", &ptJetSubLead, "ptJetSubLead/F");
     theTreeNew->Branch("etaJetSubLead", &etaJetSubLead, "etaJetSubLead/F");
     theTreeNew->Branch("phiJetSubLead", &phiJetSubLead, "phiJetSubLead/F");
     theTreeNew->Branch("massJetSubLead", &massJetSubLead, "massJetSubLead/F");
     theTreeNew->Branch("indexJetSubLead", &indexJetSubLead, "indexJetSubLead/I");
+    theTreeNew->Branch("NEMfracJet2", &NEMfracJet2, "NEMfracJet2/F");
+    theTreeNew->Branch("CEMfracJet2", &CEMfracJet2, "CEMfracJet2/F");
+    theTreeNew->Branch("ELfracJet2", &ELfracJet2, "ELfracJet2/F");
+    theTreeNew->Branch("CHfracJet2", &CHfracJet2, "CHfracJet2/F");
+    theTreeNew->Branch("NHfracJet2", &NHfracJet2, "NHfracJet2/F");
+    theTreeNew->Branch("PHfracJet2", &PHfracJet2, "PHfracJet2/F");
+    theTreeNew->Branch("MUfracJet2", &MUfracJet2, "MUfracJet2/F");
+    theTreeNew->Branch("CHmultJet2", &CHmultJet2, "CHmultJet2/I");
+    theTreeNew->Branch("NEmultJet2", &NEmultJet2, "NEmultJet2/I");
+    theTreeNew->Branch("ptJet3", &ptJet3, "ptJet3/F");
+    theTreeNew->Branch("etaJet3", &etaJet3, "etaJet3/F");
+    theTreeNew->Branch("phiJet3", &phiJet3, "phiJet3/F");
+    theTreeNew->Branch("massJet3", &massJet3, "massJet3/F");
+    theTreeNew->Branch("indexJet3", &indexJet3, "indexJet3/I");
+    theTreeNew->Branch("NEMfracJet3", &NEMfracJet3, "NEMfracJet3/F");
+    theTreeNew->Branch("CEMfracJet3", &CEMfracJet3, "CEMfracJet3/F");
+    theTreeNew->Branch("ELfracJet3", &ELfracJet3, "ELfracJet3/F");
+    theTreeNew->Branch("CHfracJet3", &CHfracJet3, "CHfracJet3/F");
+    theTreeNew->Branch("NHfracJet3", &NHfracJet3, "NHfracJet3/F");
+    theTreeNew->Branch("PHfracJet3", &PHfracJet3, "PHfracJet3/F");
+    theTreeNew->Branch("MUfracJet3", &MUfracJet3, "MUfracJet3/F");
+    theTreeNew->Branch("CHmultJet3", &CHmultJet3, "CHmultJet3/I");
+    theTreeNew->Branch("NEmultJet3", &NEmultJet3, "NEmultJet3/I");
+    theTreeNew->Branch("ptJet4", &ptJet4, "ptJet4/F");
+    theTreeNew->Branch("etaJet4", &etaJet4, "etaJet4/F");
+    theTreeNew->Branch("phiJet4", &phiJet4, "phiJet4/F");
+    theTreeNew->Branch("massJet4", &massJet4, "massJet4/F");
+    theTreeNew->Branch("indexJet4", &indexJet4, "indexJet4/I");
+    theTreeNew->Branch("NEMfracJet4", &NEMfracJet4, "NEMfracJet4/F");
+    theTreeNew->Branch("CEMfracJet4", &CEMfracJet4, "CEMfracJet4/F");
+    theTreeNew->Branch("ELfracJet4", &ELfracJet4, "ELfracJet4/F");
+    theTreeNew->Branch("CHfracJet4", &CHfracJet4, "CHfracJet4/F");
+    theTreeNew->Branch("NHfracJet4", &NHfracJet4, "NHfracJet4/F");
+    theTreeNew->Branch("PHfracJet4", &PHfracJet4, "PHfracJet4/F");
+    theTreeNew->Branch("MUfracJet4", &MUfracJet4, "MUfracJet4/F");
+    theTreeNew->Branch("CHmultJet4", &CHmultJet4, "CHmultJet4/I");
+    theTreeNew->Branch("NEmultJet4", &NEmultJet4, "NEmultJet4/I");
     theTreeNew->Branch("vtxIndex", &vtxIndex, "vtxIndex/I");
     theTreeNew->Branch("vtxX", &vtxX, "vtxX/F");
     theTreeNew->Branch("vtxY", &vtxY, "vtxY/F");
@@ -684,6 +875,8 @@ void addWeights(const char* filename, float lumiForW, float massTrue=1) {
     theTreeNew->Branch("metF_HBHENoiseIso",&metF_HBHENoiseIso,"metF_HBHENoiseIso/I");
     theTreeNew->Branch("metF_CSC",&metF_CSC,"metF_CSC/I");
     theTreeNew->Branch("metF_eeBadSC",&metF_eeBadSC,"metF_eeBadSC/I");
+    theTreeNew->Branch("metF_MuonBadTrack",&metF_MuonBadTrack,"metF_MuonBadTrack/I");
+    theTreeNew->Branch("metF_HadronTrackRes",&metF_HadronTrackRes,"metF_HadronTrackRes/I");
     theTreeNew->Branch("higgsVtxX", &higgsVtxX, "higgsVtxX/F");
     theTreeNew->Branch("higgsVtxY", &higgsVtxY, "higgsVtxY/F");
     theTreeNew->Branch("higgsVtxZ", &higgsVtxZ, "higgsVtxZ/F");
@@ -736,6 +929,9 @@ void addWeights(const char* filename, float lumiForW, float massTrue=1) {
     treeNew->Fill();
   }
 
+  // take the h_selection unscaled for h_selection_unwgt 
+  h_selection_unwgt = (TH1F*)h_selection->Clone();
+  h_selection_unwgt->SetName("h_selection_unwgt");
   // histo scaling to get the correct normalization
   h_selection->Scale( xsecToWeight / sampleSumWeight );  
 
@@ -744,6 +940,7 @@ void addWeights(const char* filename, float lumiForW, float massTrue=1) {
   h_entries->Write();
   h_sumW->Write();
   h_selection->Write();
+  h_selection_unwgt->Write();
   treeNew->Write();
   fileNew->Close();
 

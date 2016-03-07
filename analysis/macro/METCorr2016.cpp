@@ -9,15 +9,16 @@
 #include <TProfile.h>
 #include <TLorentzVector.h>
 
-DblVec METCorr2016::Loop()
+DblVec METCorr2016::Loop(TString inDir, TString outFile)
 {
+ 
   DblVec metcorr;
   metcorr.resize(4);
   for (UInt_t i=0; i<metcorr.size(); i++) metcorr[i]=0.0;
 
   //if (fChain == 0) return;
   
-  TFile *temp=new TFile("metstudy.root", "RECREATE");
+  TFile *temp=new TFile(Form("%smetCorr_%s.root",inDir.Data(),outFile.Data()), "RECREATE");
   TProfile metx("metx","",10,0,200);
   TProfile mety("mety","",10,0,200);
   
@@ -26,7 +27,9 @@ DblVec METCorr2016::Loop()
   
   TH1D metphi("metphi","",100,-3.14,3.14);
   TH1D metphinew("metphinew","",100,-3.14,3.14);
-  
+ 
+  TH1D metCorr("metCorr","",4,0,4);
+ 
   Long64_t nentries = fChain->GetEntriesFast();
   std::cout << nentries << std::endl;
 
@@ -56,7 +59,12 @@ DblVec METCorr2016::Loop()
   mety.Fit("line"); 
   py0 = line.GetParameter(0);
   py1 = line.GetParameter(1);
-  
+ 
+  metCorr.Fill(0.5,px0);
+  metCorr.Fill(1.5,px1);
+  metCorr.Fill(2.5,py0);
+  metCorr.Fill(3.5,py1);
+ 
   nentries = fChain->GetEntriesFast();
   
   nbytes = 0, nb = 0;
@@ -94,14 +102,15 @@ DblVec METCorr2016::Loop()
   
   metphi.Write();
   metphinew.Write();
-  
+ 
+  metCorr.Write();
+ 
   temp->Write() ;
   temp->Close() ;
   temp->Delete();
   
   std::cout << "px = t1pfmet*cos(t1pfmetPhi) -(" << px0 << " + " << px1 << " * t1pfmetSumEt)" << std::endl;
   std::cout << "py = t1pfmet*sin(t1pfmetPhi) -(" << py0 << " + " << py1 << " * t1pfmetSumEt)" << std::endl;
-
   
   metcorr[0]=px0;
   metcorr[1]=px1;

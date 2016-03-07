@@ -3,12 +3,11 @@
 #include "../../../DataFormats/Math/interface/deltaPhi.h"
 #include "mkPlotsLivia/CMS_lumi.C"
 
-Plotter::Plotter( TString inName, TString outName, TString inSpecies, const DblVec puweights, const Double_t lumi, Bool_t Data, Bool_t Blind, TString type, Bool_t doMETCorr, const DblVec metCorr){
+Plotter::Plotter( TString inName, TString outName, TString inSpecies, const DblVec puweights, const Double_t lumi, Bool_t Data, Bool_t Blind, TString type, const DblVec metCorr){
 
   fType = type;  
   isData = Data;
   doBlind = Blind;
-  doMETcorr = doMETCorr;
   fMETCorr = metCorr;
 
   // Get ROOT file
@@ -24,23 +23,22 @@ Plotter::Plotter( TString inName, TString outName, TString inSpecies, const DblV
   fPUWeights = puweights;
 
   fSelection.resize(8);
+  fSelection_unwgt.resize(8);
   TH1D *fSel = (TH1D*)inFile->Get("h_selection");
+  TH1D *fSel_unwgt = (TH1D*)inFile->Get("h_selection_unwgt");
   CheckValidTH1D(fSel,"h_selection",Form("%s%s.root",name.Data(),species.Data()));
-  //if (isData && doBlind){
-  //  for (UInt_t i=0; i<6; i++){
-  //    fSelection[i]=fSel->GetBinContent(i+1);
-  //  }
-  //  fSelection[6]=0;
-  //  fSelection[7]=0;
-  //}
+  CheckValidTH1D(fSel_unwgt,"h_selection_unwgt",Form("%s%s.root",name.Data(),species.Data()));
+
   if (!(isData && doBlind)){
     for (UInt_t i=0; i<8; i++){ 
       // values of bin i correspond to passing (all cuts previous + one listed below):  
       // 1=trigger, 2=presel, 3=selection, 4=pt1>30,pt2>20, 5=pt1>mgg/3,pt2>mgg/4, 6=goodVtx, 7=mgg, 8=met
       fSelection[i]=fSel->GetBinContent(i+1);
+      fSelection_unwgt[i]=fSel_unwgt->GetBinContent(i+1);
     }
+    //fTH1DMap["selection_unwgt"] = (TH1D*)fSel_unwgt->Clone();
   }
-  std::cout << "Finished getting the h_selection" << std::endl;  
+  std::cout << "Finished getting the h_selection & h_selection_unwgt" << std::endl;  
 
   // Make TLorentzVector for the photons
   TLorentzVector *fLorenzVec1		= new TLorentzVector();
@@ -48,6 +46,8 @@ Plotter::Plotter( TString inName, TString outName, TString inSpecies, const DblV
   TLorentzVector *fLorenzVecgg		= new TLorentzVector();
   TLorentzVector *fLorenzVecJet1	= new TLorentzVector();
   TLorentzVector *fLorenzVecJet2	= new TLorentzVector();
+  TLorentzVector *fLorenzVecJet3	= new TLorentzVector();
+  TLorentzVector *fLorenzVecJet4	= new TLorentzVector();
 
   // Make output directory
   fName = outName;
@@ -95,8 +95,9 @@ void Plotter::DoPlots(int prompt){
 
   fTH1DMap["hlt"]->Fill(0.5,nentries);
   // fSelection[i]-> 1=trigger, 2=presel, 3=selection, 4=pt1>30,pt2>20, 5=pt1>mgg/3,pt2>mgg/4, 6=goodVtx, 7=mgg, 8=met
-  for (UInt_t i=0; i<7; i++){
+  for (UInt_t i=0; i<8; i++){
     fTH1DMap["selection"]->Fill(i+0.5,fSelection[i]);
+    fTH1DMap["selection_unwgt"]->Fill(i+0.5,fSelection_unwgt[i]);
   }
 
   Int_t numFailingMETfil = 0;
@@ -114,7 +115,23 @@ void Plotter::DoPlots(int prompt){
   Int_t nRel1entries = 0;
   Int_t nRel2entries = 0;
   Int_t nRel3entries = 0;
+
+  Int_t numPassingLeptonReject = 0;
+
+  Int_t nData = 0;
+  Int_t nDataMETfil1 = 0;
+  Int_t nDataMETfil2 = 0;
+  Int_t nDataMETfil3 = 0;
+  Int_t nDataMETfil4 = 0;
+  Int_t nDataMETfil5 = 0;
+  Int_t nDataMETfil6 = 0;
+  Int_t nDataMETfil7 = 0;
   
+  Int_t nDataOrig = 0;
+  Int_t nDatadphi1 = 0;
+  Int_t nDatadphi2 = 0;
+  Int_t nDatadphi3 = 0;
+
   for (UInt_t entry = 0; entry < nentries; entry++){
     tpho->GetEntry(entry);
 
@@ -122,9 +139,10 @@ void Plotter::DoPlots(int prompt){
     fLorenzVec1.SetPtEtaPhiM(pt1,eta1,phi1,0.);
     fLorenzVec2.SetPtEtaPhiM(pt2,eta2,phi2,0.);
     fLorenzVecgg = fLorenzVec1 + fLorenzVec2;
-    fLorenzVecJet1.SetPtEtaPhiM(ptJetLead,etaJetLead,phiJetLead,0.);
-    fLorenzVecJet2.SetPtEtaPhiM(ptJetSubLead,etaJetSubLead,phiJetSubLead,0.);
- 
+    fLorenzVecJet1.SetPtEtaPhiM(ptJetLead,etaJetLead,phiJetLead,massJetLead);
+    fLorenzVecJet2.SetPtEtaPhiM(ptJetSubLead,etaJetSubLead,phiJetSubLead,massJetSubLead);
+    fLorenzVecJet3.SetPtEtaPhiM(ptJet3,etaJet3,phiJet3,massJet3);
+    fLorenzVecJet4.SetPtEtaPhiM(ptJet4,etaJet4,phiJet4,massJet4);
 
     // calculate the weight
     Double_t Weight = (weight)*fPUWeights[nvtx];// PURW[0] corresponds to bin1=0vtx
@@ -194,10 +212,37 @@ void Plotter::DoPlots(int prompt){
     // Check if the Data passes MET filters
     Bool_t passMETfil = true;
     if (isData){
-      if (metF_GV!=1 || metF_HBHENoise!=1 || metF_HBHENoiseIso!=1 || metF_CSC!=1 || metF_eeBadSC!=1 ) passMETfil = false; 
+      if (metF_GV!=1 || metF_HBHENoise!=1 || metF_HBHENoiseIso!=1 || metF_CSC!=1 || metF_eeBadSC!=1 || metF_MuonBadTrack!=1 || metF_HadronTrackRes!=1){
+	passMETfil = false; 
+      }
     }
     if (!passMETfil) numFailingMETfil++;
-    if (!isData && !passMETfil) std::cout << "SOMETHING WRONG W/ MET FILTERS" << std::endl;
+
+    // Count number of events failing MET filters
+    if (isData && hltDiphoton30Mass95==1){
+      nData++;
+      if (metF_GV==1){
+	nDataMETfil1++;
+	if (metF_eeBadSC==1){
+	  nDataMETfil2++;
+	  if (metF_HBHENoiseIso==1){
+	    nDataMETfil3++;
+	    if (metF_HBHENoise==1){
+	      nDataMETfil4++;
+	      if (metF_MuonBadTrack==1){
+		nDataMETfil5++;
+		if (metF_HadronTrackRes==1){
+		  nDataMETfil6++;
+		  if (metF_CSC==1){
+		    nDataMETfil7++;
+		  }
+		}
+	      }
+	    }
+	  }	
+	}
+      }
+    } 
 
     // Check that the weight is not less than 0
     Bool_t weightNegative = false;
@@ -224,10 +269,16 @@ void Plotter::DoPlots(int prompt){
       }
     }  
 
+    fTH1DMap["pt1_beforeIDloose"]->Fill(pt1);
+    fTH1DMap["eta1_beforeIDloose"]->Fill(eta1);
+    if (passBoth){// check that diphoton passes the loose ID
+      fTH1DMap["pt1_afterIDloose"]->Fill(pt1);
+      fTH1DMap["eta1_afterIDloose"]->Fill(eta1);
+    }
 
     // START full selection for plots
     if (passMETfil && !weightNegative){ //Data passes MET filters && not a negativeWeight
-      if (true /*pt1 > 0.65*mgg && pt2 > 0.25*mgg*/){
+      if (pt1 > 0.65*mgg && pt2 > 0.25*mgg){
       //if (mgg >= 100 && mgg < 180 && passEV1 && passEV2 /*&&  pt1 > 0.65*mgg && pt2 > 0.25*mgg */ /*&& t1pfmet > 80*/ ){
         fTH1DMap["eff_sel"]->Fill(1.5,Weight);
         if (!isData || (isData && hltDiphoton30Mass95==1)){ // data has to pass trigger
@@ -239,23 +290,18 @@ void Plotter::DoPlots(int prompt){
           //if (prompt==2 && (genmatch1==1 || genmatch2==1)) continue;   // only FF for QCD       
 
 	  numPassingAll++;
+	  if (nEle < 1 && nMuons < 1) numPassingLeptonReject++;
+	  //if (nEle >= 1 || nMuons >= 1) continue; //reject events with leptons
 
 	  // t1pfmet phi Correction
 	  Double_t t1pfmetCorrX;
 	  Double_t t1pfmetCorrY;
 	  Double_t t1pfmetCorrE;
-	  if (doMETcorr){
-	    t1pfmetCorrX = t1pfmet*cos(t1pfmetPhi) - (fMETCorr[0] + fMETCorr[1]*t1pfmetSumEt);
-	    t1pfmetCorrY = t1pfmet*sin(t1pfmetPhi) - (fMETCorr[2] + fMETCorr[3]*t1pfmetSumEt);
-            //std::cout << "px = t1pfmet*cos(t1pfmetPhi) - (" << fMETCorr[0] << " + " << fMETCorr[1] << "*t1pfmetSumEt)" << std::endl;
-            //std::cout << "py = t1pfmet*sin(t1pfmetPhi) - (" << fMETCorr[2] << " + " << fMETCorr[3] << "*t1pfmetSumEt)" << std::endl;
-	    t1pfmetCorrE = sqrt(t1pfmetCorrX*t1pfmetCorrX + t1pfmetCorrY*t1pfmetCorrY);
-          }
-          else{ 
-	    t1pfmetCorrX = 0; 
-	    t1pfmetCorrY = 0; 
-	    t1pfmetCorrE = 0;
-	  } 
+	  t1pfmetCorrX = t1pfmet*cos(t1pfmetPhi) - (fMETCorr[0] + fMETCorr[1]*t1pfmetSumEt);
+	  t1pfmetCorrY = t1pfmet*sin(t1pfmetPhi) - (fMETCorr[2] + fMETCorr[3]*t1pfmetSumEt);
+          //std::cout << "px = t1pfmet*cos(t1pfmetPhi) - (" << fMETCorr[0] << " + " << fMETCorr[1] << "*t1pfmetSumEt)" << std::endl;
+          //std::cout << "py = t1pfmet*sin(t1pfmetPhi) - (" << fMETCorr[2] << " + " << fMETCorr[3] << "*t1pfmetSumEt)" << std::endl;
+	  t1pfmetCorrE = sqrt(t1pfmetCorrX*t1pfmetCorrX + t1pfmetCorrY*t1pfmetCorrY);
 	  TLorentzVector correctedMet;
 	  correctedMet.SetPxPyPzE(t1pfmetCorrX,t1pfmetCorrY,0,t1pfmetCorrE);
 	  Double_t t1pfmetPhiCorr = correctedMet.Phi(); 
@@ -332,6 +378,7 @@ void Plotter::DoPlots(int prompt){
           //  }
           //}
 
+	  if ( ptJetSubLead > ptJetLead ) std::cout << "Jets are NOT ordered ! " << std::endl;
 
           fTH1DMap["eff_sel"]->Fill(2.5,Weight);
           //Fill histograms
@@ -362,6 +409,7 @@ void Plotter::DoPlots(int prompt){
             if (t1pfmet < 100){
               fTH1DMap["t1pfmet"]->Fill(t1pfmet,Weight);
               fTH1DMap["t1pfmet_zoom"]->Fill(t1pfmet,Weight);
+              fTH1DMap["t1pfmetCorr_zoom"]->Fill(t1pfmetCorr,Weight);
               fTH2DMap["t1pfmet_PU"]->Fill(nvtx,t1pfmet,Weight);
               fTH1DMap["t1pfmetCorr"]->Fill(t1pfmetCorr,Weight);
             }
@@ -376,6 +424,7 @@ void Plotter::DoPlots(int prompt){
             fTH1DMap["t1pfmet"]->Fill(t1pfmet,Weight);
             fTH1DMap["t1pfmet_scaledipho"]->Fill(t1pfmet,Weight*1.5);
             fTH1DMap["t1pfmetCorr"]->Fill(t1pfmetCorr,Weight);
+            fTH1DMap["t1pfmetCorr_zoom"]->Fill(t1pfmetCorr,Weight);
             fTH1DMap["t1pfmetJetEnUp"]->Fill(t1pfmetJetEnUp,Weight);
             fTH1DMap["t1pfmetJetEnDown"]->Fill(t1pfmetJetEnDown,Weight);
   	    fTH1DMap["t1pfmetJetResUp"]->Fill(t1pfmetJetResUp,Weight);
@@ -436,40 +485,137 @@ void Plotter::DoPlots(int prompt){
 	  fTH1DMap["phiJet2"]->Fill(phiJetSubLead,Weight);  
 	  fTH1DMap["etaJet1"]->Fill(etaJetLead,Weight);       
 	  fTH1DMap["etaJet2"]->Fill(etaJetSubLead,Weight);    
-	  fTH1DMap["dphiJet1MET"]->Fill(deltaPhi(fLorenzVecJet1.Phi(),t1pfmetPhi),Weight);
-	  fTH1DMap["dphiJet2MET"]->Fill(deltaPhi(fLorenzVecJet2.Phi(),t1pfmetPhi),Weight);
+	  fTH1DMap["dphiJet1MET"]->Fill(deltaPhi(fLorenzVecJet1.Phi(),t1pfmetPhiCorr),Weight);
+	  fTH1DMap["dphiJet2MET"]->Fill(deltaPhi(fLorenzVecJet2.Phi(),t1pfmetPhiCorr),Weight);
 	  fTH1DMap["absdphiJet1MET"]->Fill(TMath::Abs(deltaPhi(fLorenzVecJet1.Phi(),t1pfmetPhiCorr)),Weight);
 	  fTH1DMap["absdphiJet2MET"]->Fill(TMath::Abs(deltaPhi(fLorenzVecJet2.Phi(),t1pfmetPhiCorr)),Weight);
 	  fTH1DMap["absdphi_ggJet1"]->Fill(TMath::Abs(deltaPhi(fLorenzVecJet1.Phi(),fLorenzVecgg.Phi())),Weight);
-          
+	  fTH1DMap["absdphi_g1MET"]->Fill(TMath::Abs(deltaPhi(fLorenzVec1.Phi(),t1pfmetPhiCorr)),Weight);
+	  if (t1pfmet > 100) fTH1DMap["absdphi_g1MET_met100"]->Fill(TMath::Abs(deltaPhi(fLorenzVec1.Phi(),t1pfmetPhiCorr)),Weight);
 
+          
 	  // Study the effect of Jets on the MET distribution
 	  // DeltaPhi between each Jet and the MET
-          Double_t dphiJet1MET = 0;
-          Double_t dphiJet2MET = 0;
-	  if (ptJetLead > 50)    dphiJet1MET = TMath::Abs(deltaPhi(fLorenzVecJet1.Phi(),t1pfmetPhi));
-	  if (ptJetSubLead > 50) dphiJet2MET = TMath::Abs(deltaPhi(fLorenzVecJet2.Phi(),t1pfmetPhi));
-	  Bool_t dphiJet1METpass = false; // dphi Jet1-MET < 2.7
-	  if ( dphiJet1MET < 2.7 ) dphiJet1METpass = true; 
-	  Bool_t dphiJet2METpass = false; // dphi Jet2-MET < 2.7
-	  if ( dphiJet2MET < 2.7 ) dphiJet2METpass = true; 
 
-	  // Max DeltaPhi between Jet and MET
-          Double_t maxJetMETphi = 0;
-          if (dphiJet1MET > dphiJet2MET) maxJetMETphi = dphiJet1MET;         
-	  else maxJetMETphi = dphiJet2MET;
-	  Bool_t dphiJETMETpass = false; // max dphi Jet-MET < 2.7 
-	  if ( maxJetMETphi < 2.7 ) dphiJETMETpass = true;
-	  
+	  // set these values to true for events w/o jets
+	  //Bool_t dphiJet1METpass = true;	// dphi Jet1-MET < 2.7
+	  //Bool_t dphiJet2METpass = true;	// dphi Jet2-MET < 2.7
+	  Bool_t max_dphiJETMETpass = true;	// max dphi Jet-MET < 2.7 
+	  Bool_t min_dphiJETMETpass = true;	// min dphi Jet-MET > 0.5 
+	
+          Double_t max_dphi_JetMET = 0.;
+	  Double_t min_dphi_JetMET = 10.;
+ 
+	  //if(run==260538&& lumi==245 && event==413101759)	std::cout <<lumi<<" *** Event njets = "<< nJets <<std::endl;
+	  //if(run==260426&& lumi==49  && event==81336845) 	std::cout <<lumi<<" *** Event njets = "<< nJets <<std::endl;
+	  //if(run==260424&& lumi==593 && event==1100585340)	std::cout <<lumi<<" *** Event njets = "<< nJets <<std::endl;
+	  //if(run==260424&& lumi==166 && event==308985087)	std::cout <<lumi<<" *** Event njets = "<< nJets <<std::endl;
+	  //if(run==260627&& lumi==756 && event==1386828994)	std::cout <<lumi<<" *** Event njets = "<< nJets <<std::endl;
+	  //if(run==259685&& lumi==160 && event==289342590)	std::cout <<lumi<<" *** Event njets = "<< nJets <<std::endl;
+	  //if(run==256843&& lumi==1033&& event==1427294382)	std::cout <<lumi<<" *** Event njets = "<< nJets <<std::endl;
+	  //if(run==258706&& lumi==18  && event==32214611)	std::cout <<lumi<<" *** Event njets = "<< nJets <<std::endl;
+	  //if(run==258703&& lumi==377 && event==653522584)	std::cout <<lumi<<" *** Event njets = "<< nJets <<std::endl;
+	  //if(run==258703&& lumi==302 && event==512333471)	std::cout <<lumi<<" *** Event njets = "<< nJets <<std::endl;
+	  //if(run==258656&& lumi==75  && event==125514897)	std::cout <<lumi<<" *** Event njets = "<< nJets <<std::endl;
+	  //if(run==256843&& lumi==38  && event==55470023)	std::cout <<lumi<<" *** Event njets = "<< nJets <<std::endl;
+
+	  // look at dphi of jet and MET of events w/ jets
+	  // if only one high pt jet, min & max dphi are dphi of single jet
+	  //if ( nJets == 1 ){
+	  //  if ( ptJetLead > 50 ){
+	  //    Double_t dphi_JetMET = TMath::Abs(deltaPhi(fLorenzVecJet1.Phi(),t1pfmetPhi));
+	  //    min_dphi_JetMET = dphi_JetMET;
+	  //    max_dphi_JetMET = dphi_JetMET;
+	  //  }
+	  //}
+	  // if more than one high pt jet, find min & max dphi of the top 4 jets
+	  if ( nJets > 0 ){
+	    Double_t dphiJet1METmin = 10;
+	    Double_t dphiJet2METmin = 10;
+	    Double_t dphiJet3METmin = 10;
+	    Double_t dphiJet4METmin = 10;
+	    Double_t dphiJet1METmax = 0;
+	    Double_t dphiJet2METmax = 0;
+	    Double_t dphiJet3METmax = 0;
+	    Double_t dphiJet4METmax = 0;
+	    if ( ptJetLead > 50 ){
+	      dphiJet1METmin = TMath::Abs(deltaPhi(fLorenzVecJet1.Phi(),t1pfmetPhiCorr));
+	      dphiJet1METmax = TMath::Abs(deltaPhi(fLorenzVecJet1.Phi(),t1pfmetPhiCorr));
+	    }
+	    if ( ptJetSubLead > 50 ){
+	      dphiJet2METmin = TMath::Abs(deltaPhi(fLorenzVecJet2.Phi(),t1pfmetPhiCorr));
+	      dphiJet2METmax = TMath::Abs(deltaPhi(fLorenzVecJet2.Phi(),t1pfmetPhiCorr));
+	    }
+	    if ( ptJet3 > 50 ){
+	      dphiJet3METmin = TMath::Abs(deltaPhi(fLorenzVecJet3.Phi(),t1pfmetPhiCorr));
+	      dphiJet3METmax = TMath::Abs(deltaPhi(fLorenzVecJet3.Phi(),t1pfmetPhiCorr));
+	    }
+	    if ( ptJet4 > 50 ){
+ 	      dphiJet4METmin = TMath::Abs(deltaPhi(fLorenzVecJet4.Phi(),t1pfmetPhiCorr));
+ 	      dphiJet4METmax = TMath::Abs(deltaPhi(fLorenzVecJet4.Phi(),t1pfmetPhiCorr));
+	    }
+
+	    // find the min_dphi_JetMET 
+	    if (dphiJet1METmin < min_dphi_JetMET) min_dphi_JetMET = dphiJet1METmin;	   
+	    if (dphiJet2METmin < min_dphi_JetMET) min_dphi_JetMET = dphiJet2METmin;	   
+	    if (dphiJet3METmin < min_dphi_JetMET) min_dphi_JetMET = dphiJet3METmin;	   
+	    if (dphiJet4METmin < min_dphi_JetMET) min_dphi_JetMET = dphiJet4METmin;	   
+
+	    // find the max_dphi_JetMET 
+	    if (dphiJet1METmax > max_dphi_JetMET) max_dphi_JetMET = dphiJet1METmax;	   
+	    if (dphiJet2METmax > max_dphi_JetMET) max_dphi_JetMET = dphiJet2METmax;	   
+	    if (dphiJet3METmax > max_dphi_JetMET) max_dphi_JetMET = dphiJet3METmax;	   
+	    if (dphiJet4METmax > max_dphi_JetMET) max_dphi_JetMET = dphiJet4METmax;	   
+	  }
+
+	  //if (isData) std::cout << entry << " max_dphi_JetMET = " << max_dphi_JetMET << std::endl;
+	  //if (isData) std::cout << entry << " min_dphi_JetMET = " << min_dphi_JetMET << std::endl;
+
+	  if (max_dphi_JetMET > 2.7) max_dphiJETMETpass = false;// max dphi Jet-MET < 2.7 
+	  if (min_dphi_JetMET < 0.5) min_dphiJETMETpass = false;// min dphi Jet-MET > 0.5 
+ 
+	  if (nJets > 0){
+	    fTH1DMap["absdphi_maxJetMET"]->Fill(TMath::Abs(max_dphi_JetMET),Weight);
+	    fTH1DMap["absdphi_minJetMET"]->Fill(TMath::Abs(min_dphi_JetMET),Weight);
+	    if (t1pfmetCorr > 100){
+	      fTH1DMap["absdphi_maxJetMET_met100"]->Fill(TMath::Abs(max_dphi_JetMET),Weight);
+	      fTH1DMap["absdphi_minJetMET_met100"]->Fill(TMath::Abs(min_dphi_JetMET),Weight);
+	    }
+	    fTH1DMap["jetInfo_NEMfrac1"]->Fill(NEMfracJet1,Weight);
+	    fTH1DMap["jetInfo_CEMfrac1"]->Fill(CEMfracJet1,Weight);
+	    fTH1DMap["jetInfo_CHfrac1"]->Fill(CHfracJet1,Weight);
+	    fTH1DMap["jetInfo_NHfrac1"]->Fill(NHfracJet1,Weight);
+	    fTH1DMap["jetInfo_PHfrac1"]->Fill(PHfracJet1,Weight);
+	    fTH1DMap["jetInfo_ELfrac1"]->Fill(ELfracJet1,Weight);
+	    fTH1DMap["jetInfo_MUfrac1"]->Fill(MUfracJet1,Weight);
+	    fTH1DMap["jetInfo_CHmult1"]->Fill(CHmultJet1,Weight);
+	    fTH1DMap["jetInfo_NEmult1"]->Fill(NEmultJet1,Weight);
+	    fTH1DMap["jetInfo_pt1"]->Fill(ptJetLead,Weight);
+	    fTH1DMap["jetInfo_eta1"]->Fill(etaJetLead,Weight);
+	    fTH1DMap["jetInfo_phi1"]->Fill(phiJetLead,Weight);
+	    fTH1DMap["jetInfo_mass1"]->Fill(massJetLead,Weight);
+	  }
+
+
 	  // DeltaPhi between Jet1 and gg 
 	  Double_t dphiJet1gg = 0;
 	  dphiJet1gg = TMath::Abs(deltaPhi(fLorenzVecJet1.Phi(),fLorenzVecgg.Phi()));
 	  Bool_t dphiJet1ggpass = false; // dphi gg-Jet1 < 2.7
 	  if ( dphiJet1gg < 2.7 ) dphiJet1ggpass = true;
 
+	  // Max DeltaPhi between each photon and MET
+	  Double_t dphig1MET = 0;
+	  Double_t dphig2MET = 0;
+ 	  dphig1MET = TMath::Abs(deltaPhi(fLorenzVec1.Phi(),t1pfmetPhiCorr));
+ 	  dphig2MET = TMath::Abs(deltaPhi(fLorenzVec2.Phi(),t1pfmetPhiCorr));
+	  Double_t maxdphigMET = TMath::Max(dphig1MET,dphig2MET);
+	  Bool_t dphigMETpass = false; // dphi g1-JET && g2-JET < 2.7
+	  if ( dphig1MET < 2.7) dphigMETpass = true;
+	  fTH1DMap["absdphi_maxgMET"]->Fill(TMath::Abs(deltaPhi(maxdphigMET,t1pfmetPhiCorr)),Weight);
+
 	  // DeltaPhi between gg and MET
 	  Double_t dphiggMET = 0;
-          dphiggMET = TMath::Abs(deltaPhi(fLorenzVecgg.Phi(),t1pfmetPhi));
+          dphiggMET = TMath::Abs(deltaPhi(fLorenzVecgg.Phi(),t1pfmetPhiCorr));
 	  Bool_t dphiggMETpass = false; // dphi gg-MET > 2.1
 	  if ( dphiggMET > 2.1 ) dphiggMETpass = true;
 
@@ -478,51 +624,91 @@ void Plotter::DoPlots(int prompt){
 	  if ( mgg < 115 || mgg > 135 ) outsideMgg = true;
 
 	  // plots
+	  if ( !isData && dphigMETpass ) fTH1DMap["metCor_Sig"]->Fill(t1pfmetCorr,Weight);
 	  if ( (doBlind && outsideMgg) || !doBlind){
+	    if ( t1pfmetCorr > 80 ) nDataOrig++;
+	    if ( dphigMETpass ){
+	      fTH1DMap["met_aftergMETCut"]->Fill(t1pfmet,Weight);
+	      fTH1DMap["metCor_aftergMETCut"]->Fill(t1pfmetCorr,Weight);
+	    }
 	    if ( dphiJet1ggpass ){ 
 	      fTH1DMap["met_afterJetCut"]->Fill(t1pfmet,Weight); 
 	      fTH1DMap["metCor_afterJetCut"]->Fill(t1pfmetCorr,Weight); 
 	    }
-	    if ( dphiggMETpass ){
+	    if ( t1pfmetCorr > 80 ){
+	      if ( max_dphiJETMETpass ){
+	        nDatadphi1++;
+	        if ( min_dphiJETMETpass ){
+	          nDatadphi2++;
+	          if ( dphiggMETpass ) nDatadphi3++;
+	        }
+	      }
+	    }
+	    if ( dphiggMETpass){
 	      fTH1DMap["met_afterggMETCut"]->Fill(t1pfmet,Weight); 
 	      fTH1DMap["metCor_afterggMETCut"]->Fill(t1pfmetCorr,Weight); 
+	      fTH1DMap["nvtx_afterggMETCut"]->Fill(nvtx,Weight);
+	      fTH1DMap["ptgg_afterggMETCut"]->Fill(ptgg,Weight);
+	      fTH1DMap["pt1_afterggMETCut"]->Fill(pt1,Weight);
+	      fTH1DMap["pt2_afterggMETCut"]->Fill(pt2,Weight);
 	      if ( dphiJet1ggpass ){ 
 	        fTH1DMap["met_Isolategg"]->Fill(t1pfmet,Weight); 
 	        fTH1DMap["metCor_Isolategg"]->Fill(t1pfmetCorr,Weight); 
 	      } 
-	      if ( dphiJet1METpass ){ 
-	        fTH1DMap["met_IsolateMET"]->Fill(t1pfmet,Weight); 
-	        fTH1DMap["metCor_IsolateMET"]->Fill(t1pfmetCorr,Weight); 
-	      } 
 	    } 
-	    if ( dphiJet1METpass ){ 
-	      fTH1DMap["met_afterJetMETCut"]->Fill(t1pfmet,Weight); 
-	      fTH1DMap["metCor_afterJetMETCut"]->Fill(t1pfmetCorr,Weight); 
-	      if ( dphiJet1ggpass ){ 
-	        fTH1DMap["met_IsolateJET1"]->Fill(t1pfmet,Weight); 
-	        fTH1DMap["metCor_IsolateJET1"]->Fill(t1pfmetCorr,Weight);
-	      }
+	    if ( max_dphiJETMETpass ){
+	      fTH1DMap["met_maxJetMET"]->Fill(t1pfmet,Weight); 
+	      fTH1DMap["metCor_maxJetMET"]->Fill(t1pfmetCorr,Weight); 
+	    } 
+	    if ( min_dphiJETMETpass ){
+	      fTH1DMap["met_minJetMET"]->Fill(t1pfmet,Weight); 
+	      fTH1DMap["metCor_minJetMET"]->Fill(t1pfmetCorr,Weight); 
 	    }
-	    if ( dphiJETMETpass ){ 
+	    if ( max_dphiJETMETpass && min_dphiJETMETpass ){ 
 	      fTH1DMap["met_afterJetMETPhiCut"]->Fill(t1pfmet,Weight); 
 	      fTH1DMap["metCor_afterJetMETPhiCut"]->Fill(t1pfmetCorr,Weight); 
-	      if ( dphiggMETpass ){
+	      if ( dphiggMETpass /*&& dphigMETpass*/ ){
 	        fTH1DMap["met_IsolateALL"]->Fill(t1pfmet,Weight); 
 	        fTH1DMap["metCor_IsolateALL"]->Fill(t1pfmetCorr,Weight);
+		//if ( isData && t1pfmetCorr > 80 ) std::cout << run << ":" << lumi << ":" << event << std::endl;
+		if ( isData && t1pfmetCorr > 80 ) std::cout << "MET Tail: MET = " << t1pfmetCorr << " Run = " << run << " Lumi = " << lumi << " Event " << event << std::endl;
 	      } 
 	    }
 	  }
+	  if ( !isData && dphiggMETpass && max_dphiJETMETpass && min_dphiJETMETpass  ){
+	    fTH1DMap["metCorr_forShape"]->Fill(t1pfmetCorr,Weight);
+	    fTH1DMap["mgg_forShape"]->Fill(mgg,Weight);
+	    fTH1DMap["mgg_IsolateALL"]->Fill(mgg,Weight);
+	    if (t1pfmetCorr > 80){
+		fTH1DMap["mgg_IsolateALLmet80"]->Fill(mgg,Weight);
+	    	fTH1DMap["mgg_met80_forShape"]->Fill(mgg,Weight);
+	    }
+	  }
+          if ( isData && dphiggMETpass && max_dphiJETMETpass && min_dphiJETMETpass ){
+	    if (doBlind){
+	      if (outsideMgg){
+		fTH1DMap["mgg_IsolateALL"]->Fill(mgg,Weight);
+		if (t1pfmetCorr > 80) fTH1DMap["mgg_IsolateALLmet80"]->Fill(mgg,Weight);
+	      }
+	    }
+	    else{
+	      fTH1DMap["mgg_IsolateALL"]->Fill(mgg,Weight);
+	      if (t1pfmetCorr > 80) fTH1DMap["mgg_IsolateALLmet80"]->Fill(mgg,Weight);
+	    }
+	  } 
+
 
 	  if ( dphiJet1ggpass ){ 
             fTH1DMap["nvtx_afterJetCut"]->Fill(nvtx,Weight); 
             fTH1DMap["ptgg_afterJetCut"]->Fill(ptgg,Weight); 
             if (isData && doBlind && outsideMgg) fTH1DMap["mgg_afterJetCut"]->Fill(mgg,Weight);  
-            else fTH1DMap["mgg_afterJetCut"]->Fill(mgg,Weight); 
+            else if (!isData || !doBlind) fTH1DMap["mgg_afterJetCut"]->Fill(mgg,Weight); 
 	  }
 
           fTH1DMap["phigg"]->Fill(fLorenzVecgg.Phi(),Weight); 
-          fTH1DMap["dphi_ggmet"]->Fill(deltaPhi(fLorenzVecgg.Phi(),t1pfmetPhi),Weight);
-          fTH1DMap["absdphi_ggmet"]->Fill(TMath::Abs(deltaPhi(fLorenzVecgg.Phi(),t1pfmetPhi)),Weight);
+          fTH1DMap["dphi_ggmet"]->Fill(deltaPhi(fLorenzVecgg.Phi(),t1pfmetPhiCorr),Weight);
+          fTH1DMap["absdphi_ggmet"]->Fill(TMath::Abs(deltaPhi(fLorenzVecgg.Phi(),t1pfmetPhiCorr)),Weight);
+          if (t1pfmet > 100 ) fTH1DMap["absdphi_ggmet_met100"]->Fill(TMath::Abs(deltaPhi(fLorenzVecgg.Phi(),t1pfmetPhiCorr)),Weight);
           fTH1DMap["deta_gg"]->Fill((eta1-eta2),Weight);
           fTH1DMap["absdeta_gg"]->Fill(TMath::Abs(eta1-eta2),Weight);
 
@@ -580,8 +766,6 @@ void Plotter::DoPlots(int prompt){
           //    fTH1DMap["calomet_n-1"]->Fill(calomet,Weight);
           //    fTH1DMap["ptgg_n-1"]->Fill(ptgg,Weight);  
 	  
-
-
           if (passCH1 && passCH2){
             fTH1DMap["eff_sel"]->Fill(3.5,Weight);
             if (passNH1 && passNH2){
@@ -606,6 +790,19 @@ void Plotter::DoPlots(int prompt){
             }
           }
 
+	  if (!isData){
+	    fTH1DMap["vtx_eff_nvtx_d"]->Fill(nvtx);
+	    fTH1DMap["vtx_eff_met_d"]->Fill(t1pfmetCorr);
+	    Double_t vtxZdiff = TMath::Abs(genVtxZ-vtxZ); 
+	    Bool_t goodVtx = true;
+	    if ( vtxZdiff > 1.0 ) goodVtx = false;
+	    if ( goodVtx ){
+	      fTH1DMap["vtx_eff_nvtx_n"]->Fill(nvtx);
+	      fTH1DMap["vtx_eff_met_n"]->Fill(t1pfmetCorr);
+	    }
+	  }
+
+	  // compute the numerator and denomerator for efficiency plots
           for (UInt_t i = 0; i < 60; i++){
             if (nvtx == i){
               effPUd[i]++;
@@ -628,6 +825,53 @@ void Plotter::DoPlots(int prompt){
    
   }// end loop over entries in tree
 
+
+  if ( isData ){
+    TH1D * nDataPassingFilters = Plotter::MakeTH1DPlot("nDataPassingFilters","",8,0.,8.,"","Events");
+    nDataPassingFilters->Fill(0.5,nData); 
+    nDataPassingFilters->Fill(1.5,nDataMETfil1); 
+    nDataPassingFilters->Fill(2.5,nDataMETfil2); 
+    nDataPassingFilters->Fill(3.5,nDataMETfil3); 
+    nDataPassingFilters->Fill(4.5,nDataMETfil4); 
+    nDataPassingFilters->Fill(5.5,nDataMETfil5); 
+    nDataPassingFilters->Fill(6.5,nDataMETfil6); 
+    nDataPassingFilters->Fill(7.5,nDataMETfil7); 
+   
+    nDataPassingFilters->GetXaxis()->SetBinLabel(1,"Orig");
+    nDataPassingFilters->GetXaxis()->SetBinLabel(2,"GV");
+    nDataPassingFilters->GetXaxis()->SetBinLabel(3,"eeBadSC");
+    nDataPassingFilters->GetXaxis()->SetBinLabel(4,"HBHENoiseIso");
+    nDataPassingFilters->GetXaxis()->SetBinLabel(5,"HBHENoise");
+    nDataPassingFilters->GetXaxis()->SetBinLabel(6,"MuonBadTrack");
+    nDataPassingFilters->GetXaxis()->SetBinLabel(7,"HadronTrackRes");
+    nDataPassingFilters->GetXaxis()->SetBinLabel(8,"CSC");
+ 
+    gStyle->SetOptStat(0);
+    TCanvas *c1 = new TCanvas();
+    c1->cd();
+    CMSLumi(c1,11,fLumi);
+    nDataPassingFilters->Draw("HIST");
+    c1->SaveAs(Form("%s%s/data_metFilters.%s",fName.Data(),species.Data(),fType.Data()));
+
+    TH1D * nDataPassingdphi = Plotter::MakeTH1DPlot("nDataPassingdphi","",4,0.,4.,"","Events");
+    nDataPassingdphi->Fill(0.5,nDataOrig); 
+    nDataPassingdphi->Fill(1.5,nDatadphi1); 
+    nDataPassingdphi->Fill(2.5,nDatadphi2); 
+    nDataPassingdphi->Fill(3.5,nDatadphi3); 
+
+    nDataPassingdphi->GetXaxis()->SetBinLabel(1,"Orig");
+    nDataPassingdphi->GetXaxis()->SetBinLabel(2,"max #Delta#phi(j,MET)"); 
+    nDataPassingdphi->GetXaxis()->SetBinLabel(3,"min #Delta#phi(j,MET)"); 
+    nDataPassingdphi->GetXaxis()->SetBinLabel(4,"#Delta#phi(gg,MET)"); 
+ 
+    gStyle->SetOptStat(0);
+    TCanvas *c2 = new TCanvas();
+    c2->cd();
+    CMSLumi(c2,11,fLumi);
+    nDataPassingdphi->Draw("HIST");
+    c2->SaveAs(Form("%s%s/data_dphicuts_met80.%s",fName.Data(),species.Data(),fType.Data()));
+  }
+
   std::cout << "Number Events that have passed Analyzer: " << nentries << " events. " << std::endl;
   std::cout << "Number Events rejected by MET filters:   " << numFailingMETfil    << " out of " << nentries << " events. " << std::endl;
   
@@ -636,22 +880,31 @@ void Plotter::DoPlots(int prompt){
 
   std::cout << "======================================================" << std::endl;
   std::cout << "======================================================" << std::endl;
-  UInt_t binMETlo = fTH1DMap["t1pfmetCorr_partblind"]->GetXaxis()->FindBin(80);
-  UInt_t binMEThi = fTH1DMap["t1pfmetCorr_partblind"]->GetXaxis()->FindBin(298); 
+  UInt_t binMETze = fTH1DMap["t1pfmetCorr_partblind"]->GetXaxis()->FindBin(0.);
+  UInt_t binMETlo = fTH1DMap["t1pfmetCorr_partblind"]->GetXaxis()->FindBin(80.);
+  UInt_t binMEThi = fTH1DMap["t1pfmetCorr_partblind"]->GetXaxis()->FindBin(299.); 
   std::cout << "Events in MET tail of CorrMET			= " << fTH1DMap["t1pfmetCorr_partblind"]->Integral(binMETlo,binMEThi) << std::endl;
-  std::cout << "======================================================" << std::endl;
-  std::cout << "Events in MET tail of CorrMET + JetCut		= " << fTH1DMap["metCor_afterJetCut"]->Integral(binMETlo,binMEThi) << std::endl;
+  //std::cout << "======================================================" << std::endl;
+  //std::cout << "Events in MET tail of CorrMET + JetCut		= " << fTH1DMap["metCor_afterJetCut"]->Integral(binMETlo,binMEThi) << std::endl;
   std::cout << "Events in MET tail of CorrMET + ggMETCut	= " << fTH1DMap["metCor_afterggMETCut"]->Integral(binMETlo,binMEThi) << std::endl;
-  std::cout << "Events in MET tail of CorrMET + JetMETCut	= " << fTH1DMap["metCor_afterJetMETCut"]->Integral(binMETlo,binMEThi) << std::endl;
+  std::cout << "Events in MET tail of CorrMET + gMETCut		= " << fTH1DMap["metCor_aftergMETCut"]->Integral(binMETlo,binMEThi) << std::endl;
+  std::cout << "Events in MET tail of CorrMET + maxJetMETCut	= " << fTH1DMap["metCor_maxJetMET"]->Integral(binMETlo,binMEThi) << std::endl;
+  std::cout << "Events in MET tail of CorrMET + minJetMETCut	= " << fTH1DMap["metCor_minJetMET"]->Integral(binMETlo,binMEThi) << std::endl;
   std::cout << "Events in MET tail of CorrMET + JetMETPhiCut	= " << fTH1DMap["metCor_afterJetMETPhiCut"]->Integral(binMETlo,binMEThi) << std::endl;
-  std::cout << "======================================================" << std::endl;
-  std::cout << "Events in MET tail of CorrMET + Jet1 Iso	= " << fTH1DMap["metCor_IsolateJET1"]->Integral(binMETlo,binMEThi) << std::endl;
-  std::cout << "Events in MET tail of CorrMET + MET Iso		= " << fTH1DMap["metCor_IsolateMET"]->Integral(binMETlo,binMEThi) << std::endl;
-  std::cout << "Events in MET tail of CorrMET + gg Iso		= " << fTH1DMap["metCor_Isolategg"]->Integral(binMETlo,binMEThi) << std::endl;
-  std::cout << "======================================================" << std::endl;
+  //std::cout << "======================================================" << std::endl;
+  //std::cout << "Events in MET tail of CorrMET + gg Iso		= " << fTH1DMap["metCor_Isolategg"]->Integral(binMETlo,binMEThi) << std::endl;
+  //std::cout << "======================================================" << std::endl;
+  std::cout << "Events in MET tail of MET + ALL Iso		= " << fTH1DMap["met_IsolateALL"]->Integral(binMETlo,binMEThi) << std::endl;
   std::cout << "Events in MET tail of CorrMET + ALL Iso		= " << fTH1DMap["metCor_IsolateALL"]->Integral(binMETlo,binMEThi) << std::endl;
+  std::cout << "Events in all MET  of CorrMET + ALL Iso		= " << fTH1DMap["metCor_IsolateALL"]->Integral(binMETze,binMEThi) << std::endl;
+  std::cout << "Efficiency in         CorrMET + ALL Iso		= " << fTH1DMap["metCor_IsolateALL"]->Integral(binMETlo,binMEThi)/fTH1DMap["metCor_IsolateALL"]->Integral(binMETze,binMEThi) << std::endl; 
   std::cout << "======================================================" << std::endl;
   std::cout << "======================================================" << std::endl;
+
+  //if (!isData) std::cout << "Events in MET tail of CorrMET + gMETCut(SIG)= " << fTH1DMap["t1pfmetCorr_zoom"]->Integral(binMETlo,binMEThi) << std::endl;
+  //if (!isData) std::cout << "Events in MET tail of CorrMET + gMETCut(SIG)= " << fTH1DMap["metCor_Sig"]->Integral(binMETlo,binMEThi) << std::endl;
+  //std::cout << "Number Events PASSING lepton reject:     " << numPassingLeptonReject << " out of " << nentries << " events. " << std::endl; 
+  //std::cout << "Number Events PASSING all selection:     " << numPassingAll          << " out of " << nentries << " events. " << std::endl; 
 
   //std::cout << "Number Events rejected by Mgg range:     " << numOutOfMggRange    << " out of " << nentries << " events. " << std::endl; 
   //std::cout << "Number Events rejected by Neg Weight:    " << numNegativeWeight   << " out of " << nentries << " events. " << std::endl; 
@@ -698,8 +951,6 @@ void Plotter::DoPlots(int prompt){
   fTH1DMap["hlt"]->GetXaxis()->SetBinLabel(8,"Dipho30M55PV");
   fTH1DMap["hlt"]->GetXaxis()->SetBinLabel(9,"Dipho30M55EB");
 
-  //std::cout << "phi1 " << fTH1DMap["phi1_n-1"]->Integral() <<  " phi2 " << fTH1DMap["phi2_n-1"]->Integral() << std::endl;
-
   Plotter::SavePlots();
 
 }// end Plotter::DoPlots
@@ -720,8 +971,12 @@ void Plotter::SetUpPlots(){
   fTH1DMap["phi1"]		= Plotter::MakeTH1DPlot("phi1","",20,-4.,4.,"#phi(#gamma1)","");
   fTH1DMap["phi2"]		= Plotter::MakeTH1DPlot("phi2","",20,-4.,4.,"#phi(#gamma2)","");
   fTH1DMap["eta1"]		= Plotter::MakeTH1DPlot("eta1","",20,-3.,3.,"#eta(#gamma1)","");
+  fTH1DMap["eta1_beforeIDloose"]= Plotter::MakeTH1DPlot("eta1_beforeIDloose","",20,-3.,3.,"#eta(#gamma1)","");
+  fTH1DMap["eta1_afterIDloose"]	= Plotter::MakeTH1DPlot("eta1_afterIDloose","",20,-3.,3.,"#eta(#gamma1)","");
   fTH1DMap["eta2"]		= Plotter::MakeTH1DPlot("eta2","",20,-3.,3.,"#eta(#gamma2)","");
   fTH1DMap["pt1"]		= Plotter::MakeTH1DPlot("pt1","",60,0.,600.,"p_{T,#gamma1} (GeV)","");
+  fTH1DMap["pt1_beforeIDloose"]	= Plotter::MakeTH1DPlot("pt1_beforeIDloose","",60,0.,600.,"p_{T,#gamma1} (GeV)","");
+  fTH1DMap["pt1_afterIDloose"]	= Plotter::MakeTH1DPlot("pt1_afterIDloose","",60,0.,600.,"p_{T,#gamma1} (GeV)","");
   fTH1DMap["pt2"]		= Plotter::MakeTH1DPlot("pt2","",40,0.,400.,"p_{T,#gamma2} (GeV)","");
   fTH1DMap["chiso1"]		= Plotter::MakeTH1DPlot("chiso1","",75,-5.,15.,"CHiso(#gamma1)","");
   fTH1DMap["chiso2"]		= Plotter::MakeTH1DPlot("chiso2","",75,-5.,15.,"CHiso(#gamma2)","");
@@ -749,27 +1004,59 @@ void Plotter::SetUpPlots(){
   fTH1DMap["absdphiJet2MET"]	= Plotter::MakeTH1DPlot("absdphiJet2MET","",20,-4.,4.,"|#Delta#phi(Jet2,E_{T}^{miss})|","");
   fTH1DMap["absdphi_ggJet1"]	= Plotter::MakeTH1DPlot("absdphi_ggJet1","",20,-4,4.,"|#Delta#phi(Jet1,E_{T}^{miss})|","");
 
-  fTH1DMap["met_afterJetMETCut"]   = Plotter::MakeTH1DPlot("met_afterJetMETCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
-  fTH1DMap["metCor_afterJetMETCut"]= Plotter::MakeTH1DPlot("metCorr_afterJetMETCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
-  fTH1DMap["met_afterJetMETPhiCut"]   = Plotter::MakeTH1DPlot("met_afterJetMETPhiCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
-  fTH1DMap["metCor_afterJetMETPhiCut"]= Plotter::MakeTH1DPlot("metCorr_afterJetMETPhiCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
-  fTH1DMap["met_afterggMETCut"]	   = Plotter::MakeTH1DPlot("met_afterggMETCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
-  fTH1DMap["metCor_afterggMETCut"] = Plotter::MakeTH1DPlot("metCorr_afterggMETCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["absdphi_g1MET"]		= Plotter::MakeTH1DPlot("absdphi_g1MET","",10,0.,4.,"|#Delta#phi(Pho1,E_{T}^{miss})|","");
+  fTH1DMap["absdphi_g1MET_met100"]	= Plotter::MakeTH1DPlot("absdphi_g1MET_met100","",40,0.,4.,"|#Delta#phi(Pho1,E_{T}^{miss})|","");
+  fTH1DMap["absdphi_maxgMET"]		= Plotter::MakeTH1DPlot("absdphi_maxgMET","",10,0.,4.,"Max|#Delta#phi(Pho,E_{T}^{miss})|","");
+  fTH1DMap["absdphi_maxJetMET"]		= Plotter::MakeTH1DPlot("absdphi_maxJetMET","",10,0.,4.,"Max|#Delta#phi(Jet,E_{T}^{miss})|","");
+  fTH1DMap["absdphi_minJetMET"]		= Plotter::MakeTH1DPlot("absdphi_minJetMET","",10,0.,4.,"Min|#Delta#phi(Jet,E_{T}^{miss})|","");
+  fTH1DMap["absdphi_maxJetMET_met100"]	= Plotter::MakeTH1DPlot("absdphi_maxJetMET_met100","",40,0.,4.,"Max|#Delta#phi(Jet,E_{T}^{miss})|","");
+  fTH1DMap["absdphi_minJetMET_met100"]	= Plotter::MakeTH1DPlot("absdphi_minJetMET_met100","",40,0.,4.,"Min|#Delta#phi(Jet,E_{T}^{miss})|","");
+  fTH1DMap["absdphi_ggmet"]		= Plotter::MakeTH1DPlot("absdphi_ggmet","",20,0.,4.,"|#Delta#phi(#gamma#gamma,MET)|","");
+  fTH1DMap["absdphi_ggmet_met100"]	= Plotter::MakeTH1DPlot("absdphi_ggmet_met100","",40,0.,4.,"|#Delta#phi(#gamma#gamma,MET)|","");
+  fTH1DMap["dphi_ggmet"]		= Plotter::MakeTH1DPlot("dphi_ggmet","",20,-4.,4.,"#Delta#phi(#gamma#gamma,MET)","");
+
+  fTH1DMap["met_afterJetMETPhiCut"]	= Plotter::MakeTH1DPlot("met_afterJetMETPhiCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["metCor_afterJetMETPhiCut"]	= Plotter::MakeTH1DPlot("metCorr_afterJetMETPhiCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["met_afterggMETCut"]		= Plotter::MakeTH1DPlot("met_afterggMETCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["metCor_afterggMETCut"]	= Plotter::MakeTH1DPlot("metCorr_afterggMETCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["met_aftergMETCut"]		= Plotter::MakeTH1DPlot("met_aftergMETCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["metCor_aftergMETCut"]	= Plotter::MakeTH1DPlot("metCorr_aftergMETCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["metCor_Sig"] 	= Plotter::MakeTH1DPlot("metCorr_Sig","",60,0.,300.,"E_{T}^{miss} (GeV)","");
   fTH1DMap["met_afterJetCut"]	= Plotter::MakeTH1DPlot("met_afterJetCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
   fTH1DMap["metCor_afterJetCut"]= Plotter::MakeTH1DPlot("metCorr_afterJetCut","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["met_maxJetMET"]	= Plotter::MakeTH1DPlot("met_maxJetMET","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["metCor_maxJetMET"]	= Plotter::MakeTH1DPlot("metCorr_maxJetMET","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["met_minJetMET"]	= Plotter::MakeTH1DPlot("met_minJetMET","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["metCor_minJetMET"]	= Plotter::MakeTH1DPlot("metCorr_minJetMET","",60,0.,300.,"E_{T}^{miss} (GeV)","");
 
-  fTH1DMap["met_IsolateMET"]	= Plotter::MakeTH1DPlot("met_IsolateMET","",60,0.,300.,"E_{T}^{miss} (GeV)","");
-  fTH1DMap["metCor_IsolateMET"]	= Plotter::MakeTH1DPlot("metCorr_IsolateMET","",60,0.,300.,"E_{T}^{miss} (GeV)","");
-  fTH1DMap["met_IsolateJET1"]	= Plotter::MakeTH1DPlot("met_IsolateJET1","",60,0.,300.,"E_{T}^{miss} (GeV)","");
-  fTH1DMap["metCor_IsolateJET1"]= Plotter::MakeTH1DPlot("metCorr_IsolateJET1","",60,0.,300.,"E_{T}^{miss} (GeV)","");
   fTH1DMap["met_Isolategg"]	= Plotter::MakeTH1DPlot("met_Isolategg","",60,0.,300.,"E_{T}^{miss} (GeV)","");
   fTH1DMap["metCor_Isolategg"]	= Plotter::MakeTH1DPlot("metCorr_Isolategg","",60,0.,300.,"E_{T}^{miss} (GeV)","");
   fTH1DMap["met_IsolateALL"]	= Plotter::MakeTH1DPlot("met_IsolateALL","",60,0.,300.,"E_{T}^{miss} (GeV)","");
   fTH1DMap["metCor_IsolateALL"]	= Plotter::MakeTH1DPlot("metCorr_IsolateALL","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["mgg_IsolateALL"]	= Plotter::MakeTH1DPlot("mgg_IsolateALL","",26,99.,151.,"m_{#gamma#gamma} (GeV)","");  
+  fTH1DMap["mgg_IsolateALLmet80"]= Plotter::MakeTH1DPlot("mgg_IsolateALLmet80","",26,99.,151.,"m_{#gamma#gamma} (GeV)","");  
 
   fTH1DMap["nvtx_afterJetCut"]	= Plotter::MakeTH1DPlot("nvtx_afterJetCut","",40,0.,40.,"nvtx","");
   fTH1DMap["mgg_afterJetCut"]	= Plotter::MakeTH1DPlot("mgg_afterJetCut","",26,99.,151.,"m_{#gamma#gamma} (GeV)","");  
   fTH1DMap["ptgg_afterJetCut"]	= Plotter::MakeTH1DPlot("ptgg_afterJetCut","",60,0.,600.,"p_{T,#gamma#gamma} (GeV)","");
+  fTH1DMap["nvtx_afterggMETCut"]= Plotter::MakeTH1DPlot("nvtx_afterggMETCut","",40,0.,40.,"nvtx","");
+  fTH1DMap["ptgg_afterggMETCut"]= Plotter::MakeTH1DPlot("ptgg_afterggMETCut","",60,0.,600.,"p_{T,#gamma#gamma} (GeV)","");
+  fTH1DMap["pt1_afterggMETCut"]	= Plotter::MakeTH1DPlot("pt1_afterggMETCut","",60,0.,600.,"p_{T,#gamma#gamma} (GeV)","");
+  fTH1DMap["pt2_afterggMETCut"]	= Plotter::MakeTH1DPlot("pt2_afterggMETCut","",60,0.,600.,"p_{T,#gamma#gamma} (GeV)","");
+
+  fTH1DMap["jetInfo_CHfrac1"]	= Plotter::MakeTH1DPlot("jetInfo_CHfrac1","",20,0,1.,"CH frac","");
+  fTH1DMap["jetInfo_NHfrac1"]	= Plotter::MakeTH1DPlot("jetInfo_NHfrac1","",20,0,1.,"NH frac","");
+  fTH1DMap["jetInfo_NEMfrac1"]	= Plotter::MakeTH1DPlot("jetInfo_NEMfrac1","",20,0,1.,"NEM frac","");
+  fTH1DMap["jetInfo_CEMfrac1"]	= Plotter::MakeTH1DPlot("jetInfo_CEMfrac1","",20,0,1.,"CEM frac","");
+  fTH1DMap["jetInfo_PHfrac1"]	= Plotter::MakeTH1DPlot("jetInfo_PHfrac1","",20,0,1.,"Pho frac","");
+  fTH1DMap["jetInfo_ELfrac1"]	= Plotter::MakeTH1DPlot("jetInfo_ELfrac1","",20,0,1.,"El frac","");
+  fTH1DMap["jetInfo_MUfrac1"]	= Plotter::MakeTH1DPlot("jetInfo_MUfrac1","",20,0,1.,"Mu frac","");
+  fTH1DMap["jetInfo_CHmult1"]	= Plotter::MakeTH1DPlot("jetInfo_CHmult1","",2,0,2.,"CH mult","");
+  fTH1DMap["jetInfo_NEmult1"]	= Plotter::MakeTH1DPlot("jetInfo_NEmult1","",2,0,2.,"NE mult","");
+  fTH1DMap["jetInfo_pt1"]	= Plotter::MakeTH1DPlot("jetInfo_pt1","",40,0,200,"p_{T}","");
+  fTH1DMap["jetInfo_eta1"]	= Plotter::MakeTH1DPlot("jetInfo_eta1","",20,-3.,3.,"#eta","");
+  fTH1DMap["jetInfo_phi1"]	= Plotter::MakeTH1DPlot("jetInfo_phi1","",20,-4.,4.,"#phi","");
+  fTH1DMap["jetInfo_mass1"]	= Plotter::MakeTH1DPlot("jetInfo_mass1","",50,0,100,"mass (GeV)","");
 
   fTH1DMap["t1pfmet_partblind"]     = Plotter::MakeTH1DPlot("t1pfmet_partblind","",60,0.,300.,"E_{T}^{miss} (GeV)","");
   fTH1DMap["t1pfmetCorr_partblind"] = Plotter::MakeTH1DPlot("t1pfmetCorr_partblind","",60,0.,300.,"E_{T}^{miss} (GeV)","");
@@ -790,6 +1077,11 @@ void Plotter::SetUpPlots(){
   fTH1DMap["t1pfmetPhoEnDown"]	= Plotter::MakeTH1DPlot("PhoEnDown","",75,0.,900.,"E_{T}^{miss} (GeV)","");
   fTH1DMap["t1pfmetUnclEnUp"]	= Plotter::MakeTH1DPlot("UnclEnUp","",75,0.,900.,"E_{T}^{miss} (GeV)","");
   fTH1DMap["t1pfmetUnclEnDown"]	= Plotter::MakeTH1DPlot("UnclEnDown","",75,0.,900.,"E_{T}^{miss} (GeV)","");
+
+  fTH1DMap["vtx_eff_met_n"]	= Plotter::MakeTH1DPlot("vtx_eff_met_n","",60,0.,300.,"E_{T}^{miss} (GeV)","Vtx Efficiency");	
+  fTH1DMap["vtx_eff_met_d"]	= Plotter::MakeTH1DPlot("vtx_eff_met_d","",60,0.,300.,"E_{T}^{miss} (GeV)","Vtx Efficiency");	
+  fTH1DMap["vtx_eff_nvtx_n"]	= Plotter::MakeTH1DPlot("vtx_eff_nvtx_n","",40,0.,40.,"nvtx","Vtx Efficinecy");	
+  fTH1DMap["vtx_eff_nvtx_d"]	= Plotter::MakeTH1DPlot("vtx_eff_nvtx_d","",40,0.,40.,"nvtx","Vtx Efficinecy");	
 
   // n minus 1 plots
   //fTH1DMap["nvtx_n-1"]		= Plotter::MakeTH1DPlot("nvtx_n-1","",40,0.,40.,"nvtx","");
@@ -822,17 +1114,20 @@ void Plotter::SetUpPlots(){
 
   // special plots
   fTH1DMap["phigg"]		= Plotter::MakeTH1DPlot("phigg","",20,-4.,4.,"#phi(#gamma#gamma)","");
-  fTH1DMap["dphi_ggmet"]	= Plotter::MakeTH1DPlot("dphi_ggmet","",20,-4.,4.,"#Delta#phi(#gamma#gamma,MET)","");
-  fTH1DMap["absdphi_ggmet"]	= Plotter::MakeTH1DPlot("absdphi_ggmet","",20,0.,4.,"|#Delta#phi(#gamma#gamma,MET)|","");
   fTH1DMap["t1pfmet_selmgg"]	= Plotter::MakeTH1DPlot("t1pfmet_selmgg","",100,0.,1000.,"E_{T}^{miss} (GeV)","");
   fTH1DMap["mgg_selt1pfmet"]	= Plotter::MakeTH1DPlot("mgg_selt1pfmet","",26,99.,151.,"m_{#gamma#gamma} (GeV)","");
   fTH1DMap["phi1_pho2pass"]     = Plotter::MakeTH1DPlot("phi1_pho2pass","",80,-4.,4.,"","");
   fTH1DMap["phi2_pho1pass"]     = Plotter::MakeTH1DPlot("phi2_pho1pass","",80,-4.,4.,"","");
   fTH1DMap["t1pfmet_zoom"]	= Plotter::MakeTH1DPlot("t1pfmet_zoom","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["t1pfmetCorr_zoom"]	= Plotter::MakeTH1DPlot("t1pfmetCorr_zoom","",60,0.,300.,"E_{T}^{miss} (GeV)","");
   fTH1DMap["deta_gg"]		= Plotter::MakeTH1DPlot("deta_gg","",20,-3.,3.,"#Delta#eta(#gamma#gamma)","");
   fTH1DMap["absdeta_gg"]	= Plotter::MakeTH1DPlot("absdeta_gg","",20,0.,3.,"|#Delta#eta(#gamma#gamma)|","");
   fTH1DMap["ptgg_selt1pfmet"]	= Plotter::MakeTH1DPlot("ptgg_selt1pfmet","",60,0.,600.,"p_{T,#gamma#gamma} (GeV)","");
   fTH1DMap["t1pfmet_selptgg"]	= Plotter::MakeTH1DPlot("t1pfmet_selptgg","",100,0.,1000.,"E_{T}^{miss} (GeV)","");
+
+  fTH1DMap["metCorr_forShape"]	= Plotter::MakeTH1DPlot("metCorr_forShape","",60,0.,300.,"E_{T}^{miss} (GeV)","");
+  fTH1DMap["mgg_forShape"]	= Plotter::MakeTH1DPlot("mgg_forShape","",26,99.,151.,"m_{#gamma#gamma} (GeV)","");  
+  fTH1DMap["mgg_met80_forShape"]= Plotter::MakeTH1DPlot("mgg_met80_forShape","",26,99.,151.,"m_{#gamma#gamma} (GeV)","");  
 
   //// pho cat plots
   //fTH1DMap["EBHighR9_mgg"]	= Plotter::MakeTH1DPlot("EBHighR9_mgg","",26,99.,151.,"m_{#gamma#gamma} (GeV)","");  
@@ -850,7 +1145,8 @@ void Plotter::SetUpPlots(){
 
   // efficiency plots
   fTH1DMap["eff_sel"]		= Plotter::MakeTH1DPlot("eff_sel","",10,0.,10.,"","");
-  fTH1DMap["selection"]		= Plotter::MakeTH1DPlot("selection","",6,0.,6.,"","");
+  fTH1DMap["selection"]		= Plotter::MakeTH1DPlot("selection","",6,-0.5,5.5,"","");
+  fTH1DMap["selection_unwgt"]	= Plotter::MakeTH1DPlot("selection_unwgt","",8,-0.5,7.5,"","");
   fTH1DMap["eff_PU"]		= Plotter::MakeTH1DPlot("eff_PU","",60,0.,60.,"","");
   fTH1DMap["eff_pt"]		= Plotter::MakeTH1DPlot("eff_pt","",60,0.,600.,"","");
   fTH1DMap["hlt"]		= Plotter::MakeTH1DPlot("hlt","",10,0.,10,"","");
@@ -965,6 +1261,11 @@ void Plotter::DeleteHists(){
 }// end Plotter::DeleteHists
 
 void Plotter::SetBranchAddresses(){
+  tpho->SetBranchAddress("run", &run, &b_run);
+  tpho->SetBranchAddress("event", &event, &b_event);
+  tpho->SetBranchAddress("lumi", &lumi, &b_lumi);
+  tpho->SetBranchAddress("rho", &rho, &b_rho);
+  tpho->SetBranchAddress("sampleID", &sampleID, &b_sampleID);
   tpho->SetBranchAddress("weight", &weight,  &b_weight);
   tpho->SetBranchAddress("nvtx",   &nvtx,    &b_nvtx);
   tpho->SetBranchAddress("mgg",    &mgg,     &b_mgg);
@@ -1067,20 +1368,74 @@ void Plotter::SetBranchAddresses(){
   tpho->SetBranchAddress("phiJetLead", &phiJetLead, &b_phiJetLead);
   tpho->SetBranchAddress("massJetLead", &massJetLead, &b_massJetLead);
   tpho->SetBranchAddress("indexJetLead", &indexJetLead, &b_indexJetLead);
+  tpho->SetBranchAddress("NEMfracJet1", &NEMfracJet1, &b_NEMfracJet1);
+  tpho->SetBranchAddress("CEMfracJet1", &CEMfracJet1, &b_CEMfracJet1);
+  tpho->SetBranchAddress("ELfracJet1", &ELfracJet1, &b_ELfracJet1);
+  tpho->SetBranchAddress("CHfracJet1", &CHfracJet1, &b_CHfracJet1);
+  tpho->SetBranchAddress("NHfracJet1", &NHfracJet1, &b_NHfracJet1);
+  tpho->SetBranchAddress("PHfracJet1", &PHfracJet1, &b_PHfracJet1);
+  tpho->SetBranchAddress("MUfracJet1", &MUfracJet1, &b_MUfracJet1);
+  tpho->SetBranchAddress("CHmultJet1", &CHmultJet1, &b_CHmultJet1);
+  tpho->SetBranchAddress("NEmultJet1", &NEmultJet1, &b_NEmultJet1);
   tpho->SetBranchAddress("ptJetSubLead", &ptJetSubLead, &b_ptJetSubLead);
   tpho->SetBranchAddress("etaJetSubLead", &etaJetSubLead, &b_etaJetSubLead);
   tpho->SetBranchAddress("phiJetSubLead", &phiJetSubLead, &b_phiJetSubLead);
   tpho->SetBranchAddress("massJetSubLead", &massJetSubLead, &b_massJetSubLead);
   tpho->SetBranchAddress("indexJetSubLead", &indexJetSubLead, &b_indexJetSubLead);
+  tpho->SetBranchAddress("NEMfracJet2", &NEMfracJet2, &b_NEMfracJet2);
+  tpho->SetBranchAddress("CEMfracJet2", &CEMfracJet2, &b_CEMfracJet2);
+  tpho->SetBranchAddress("ELfracJet2", &ELfracJet2, &b_ELfracJet2);
+  tpho->SetBranchAddress("CHfracJet2", &CHfracJet2, &b_CHfracJet2);
+  tpho->SetBranchAddress("NHfracJet2", &NHfracJet2, &b_NHfracJet2);
+  tpho->SetBranchAddress("PHfracJet2", &PHfracJet2, &b_PHfracJet2);
+  tpho->SetBranchAddress("MUfracJet2", &MUfracJet2, &b_MUfracJet2);
+  tpho->SetBranchAddress("CHmultJet2", &CHmultJet2, &b_CHmultJet2);
+  tpho->SetBranchAddress("NEmultJet2", &NEmultJet2, &b_NEmultJet2);
+  tpho->SetBranchAddress("ptJet3", &ptJet3, &b_ptJet3);
+  tpho->SetBranchAddress("etaJet3", &etaJet3, &b_etaJet3);
+  tpho->SetBranchAddress("phiJet3", &phiJet3, &b_phiJet3);
+  tpho->SetBranchAddress("massJet3", &massJet3, &b_massJet3);
+  tpho->SetBranchAddress("indexJet3", &indexJet3, &b_indexJet3);
+  tpho->SetBranchAddress("NEMfracJet3", &NEMfracJet3, &b_NEMfracJet3);
+  tpho->SetBranchAddress("CEMfracJet3", &CEMfracJet3, &b_CEMfracJet3);
+  tpho->SetBranchAddress("ELfracJet3", &ELfracJet3, &b_ELfracJet3);
+  tpho->SetBranchAddress("CHfracJet3", &CHfracJet3, &b_CHfracJet3);
+  tpho->SetBranchAddress("NHfracJet3", &NHfracJet3, &b_NHfracJet3);
+  tpho->SetBranchAddress("PHfracJet3", &PHfracJet3, &b_PHfracJet3);
+  tpho->SetBranchAddress("MUfracJet3", &MUfracJet3, &b_MUfracJet3);
+  tpho->SetBranchAddress("CHmultJet3", &CHmultJet3, &b_CHmultJet3);
+  tpho->SetBranchAddress("NEmultJet3", &NEmultJet3, &b_NEmultJet3);
+  tpho->SetBranchAddress("ptJet4", &ptJet4, &b_ptJet4);
+  tpho->SetBranchAddress("etaJet4", &etaJet4, &b_etaJet4);
+  tpho->SetBranchAddress("phiJet4", &phiJet4, &b_phiJet4);
+  tpho->SetBranchAddress("massJet4", &massJet4, &b_massJet4);
+  tpho->SetBranchAddress("indexJet4", &indexJet4, &b_indexJet4);
+  tpho->SetBranchAddress("NEMfracJet4", &NEMfracJet4, &b_NEMfracJet4);
+  tpho->SetBranchAddress("CEMfracJet4", &CEMfracJet4, &b_CEMfracJet4);
+  tpho->SetBranchAddress("ELfracJet4", &ELfracJet4, &b_ELfracJet4);
+  tpho->SetBranchAddress("CHfracJet4", &CHfracJet4, &b_CHfracJet4);
+  tpho->SetBranchAddress("NHfracJet4", &NHfracJet4, &b_NHfracJet4);
+  tpho->SetBranchAddress("PHfracJet4", &PHfracJet4, &b_PHfracJet4);
+  tpho->SetBranchAddress("MUfracJet4", &MUfracJet4, &b_MUfracJet4);
+  tpho->SetBranchAddress("CHmultJet4", &CHmultJet4, &b_CHmultJet4);
+  tpho->SetBranchAddress("NEmultJet4", &NEmultJet4, &b_NEmultJet4);
   tpho->SetBranchAddress("vhtruth", &vhtruth, &b_vhtruth);
   tpho->SetBranchAddress("metF_GV", &metF_GV, &b_metF_GV);
   tpho->SetBranchAddress("metF_HBHENoise", &metF_HBHENoise, &b_metF_HBHENoise);
   tpho->SetBranchAddress("metF_HBHENoiseIso", &metF_HBHENoiseIso, &b_metF_HBHENoiseIso);
   tpho->SetBranchAddress("metF_CSC", &metF_CSC, &b_metF_CSC);
   tpho->SetBranchAddress("metF_eeBadSC", &metF_eeBadSC, &b_metF_eeBadSC);
+  tpho->SetBranchAddress("metF_MuonBadTrack", &metF_MuonBadTrack, &b_metF_MuonBadTrack);
+  tpho->SetBranchAddress("metF_HadronTrackRes", &metF_HadronTrackRes, &b_metF_HadronTrackRes);
   tpho->SetBranchAddress("higgsVtxX", &higgsVtxX, &b_higgsVtxX);
   tpho->SetBranchAddress("higgsVtxY", &higgsVtxY, &b_higgsVtxY);
   tpho->SetBranchAddress("higgsVtxZ", &higgsVtxZ, &b_higgsVtxZ);
+  tpho->SetBranchAddress("vtxX", &vtxX, &b_vtxX);
+  tpho->SetBranchAddress("vtxY", &vtxY, &b_vtxY);
+  tpho->SetBranchAddress("vtxZ", &vtxZ, &b_vtxZ);
+  tpho->SetBranchAddress("genVtxX", &genVtxX, &b_genVtxX);
+  tpho->SetBranchAddress("genVtxY", &genVtxY, &b_genVtxY);
+  tpho->SetBranchAddress("genVtxZ", &genVtxZ, &b_genVtxZ);
   tpho->SetBranchAddress("massCorrSmear", &massCorrSmear, &b_massCorrSmear);
   tpho->SetBranchAddress("massCorrSmearUp", &massCorrSmearUp, &b_massCorrSmearUp);
   tpho->SetBranchAddress("massCorrSmearDown", &massCorrSmearDown, &b_massCorrSmearDown);
@@ -1090,10 +1445,10 @@ void Plotter::SetBranchAddresses(){
   tpho->SetBranchAddress("massRaw", &massRaw, &b_massRaw);
   tpho->SetBranchAddress("mva1", &mva1, &b_mva1);
   tpho->SetBranchAddress("mva2", &mva2, &b_mva2);
-  tpho->SetBranchAddress("genZ", &genZ, &b_b_genZ);
-  tpho->SetBranchAddress("ptZ",  &ptZ,  &b_b_ptZ);
-  tpho->SetBranchAddress("etaZ", &etaZ, &b_b_etaZ);
-  tpho->SetBranchAddress("phiZ", &phiZ, &b_b_phiZ);
+  tpho->SetBranchAddress("genZ", &genZ, &b_genZ);
+  tpho->SetBranchAddress("ptZ",  &ptZ,  &b_ptZ);
+  tpho->SetBranchAddress("etaZ", &etaZ, &b_etaZ);
+  tpho->SetBranchAddress("phiZ", &phiZ, &b_phiZ);
 
   //tpho->SetBranchAddress("", &, &b_);
   

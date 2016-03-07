@@ -20,18 +20,20 @@
 #include "TLatex.h"
 #include "THStack.h"
 #include "TLine.h"
+#include "TEfficiency.h"
 
 #include <iostream>
 #include <cmath>
 
-typedef std::vector<TFile*>   TFileVec;
-typedef std::vector<TH1D*>    TH1DVec;
-typedef std::vector<TH1DVec>  TH1DVecVec;
-typedef std::vector<THStack*> THStackVec;
-typedef std::vector<TPad*>    TPadVec;
-typedef std::vector<TLegend*> TLegVec;
-typedef std::vector<TCanvas*> TCanvVec;
-typedef std::vector<TLine*>   TLineVec;
+typedef std::vector<TFile*>   		TFileVec;
+typedef std::vector<TH1D*>    		TH1DVec;
+typedef std::vector<TH1DVec>  		TH1DVecVec;
+typedef std::vector<THStack*> 		THStackVec;
+typedef std::vector<TPad*>    		TPadVec;
+typedef std::vector<TLegend*> 		TLegVec;
+typedef std::vector<TCanvas*> 		TCanvVec;
+typedef std::vector<TLine*>   		TLineVec;
+typedef std::vector<TEfficiency*> 	TEffVec;
 
 class Combiner{
 public:
@@ -39,6 +41,8 @@ public:
   void InitCanvAndHists();
   void InitTH1DNames();
   void DoComb();
+  void VtxEfficiencies();
+  void PhotonIDEfficiencies(const UInt_t mc, const UInt_t isType);
   void FindMETEfficiencies();
   void MakeMETEffPlots();
   void MakeEffPlots();
@@ -98,7 +102,19 @@ private:
   ColorMap	fColorMapMETEff;
   TH1DVecVec	fOutBkgMETEffTH1DHists;
   TH1DVecVec	fOutSigMETEffTH1DHists;
-  
+
+  TEffVec	SigVtxEffnvtx;
+  TEffVec	SigVtxEffmet;
+  TEffVec	BkgVtxEffnvtx;
+  TEffVec	BkgVtxEffmet;
+
+  TEffVec	phoIDeff_pt;
+  TEffVec	phoIDeff_eta;
+  TH1DVec	cut_pho_pt;
+  TH1DVec	cut_pho_eta;
+  TH1DVec	mva_pho_pt;
+  TH1DVec	mva_pho_eta;
+ 
   TH1DVec	GJetsClone;
 
   TH1DVec	fOutBkgTH1DHists;

@@ -2,12 +2,18 @@
 #run extractJSONS.py for all samples in file
 
 # FLASHgg version 1_1_0 w/MET syst for 25ns: 
-python extractJSONS.py -i datasets/datasets_rereco74x_fromLivia.json	-o DoubleEG 		-d lists_25ns_v1_1_0_wMETsys/Data
+python extractJSONS.py -i datasets/datasets_rereco74x_fromLivia.json		-o DoubleEG 		-d lists_25ns_v1_1_0_wMETsys/Data
+
+python extractJSONS.py -i datasets/datasets_rereco74x_fromLivia_ewkbkg.json	-o TTGJets  		-d lists_25ns_v1_1_0_wMETsys/MC
+python extractJSONS.py -i datasets/datasets_rereco74x_fromLivia_ewkbkg.json	-o TGJets 		-d lists_25ns_v1_1_0_wMETsys/MC
+python extractJSONS.py -i datasets/datasets_rereco74x_fromLivia_ewkbkg.json	-o WGToLNuG 		-d lists_25ns_v1_1_0_wMETsys/MC
+python extractJSONS.py -i datasets/datasets_rereco74x_fromLivia_ewkbkg.json	-o ZGTo2LG   		-d lists_25ns_v1_1_0_wMETsys/MC
+
+python extractJSONS.py -i datasets/datasets_rereco74x_fromLivia_dy.json	-o DYJetsToLL		-d lists_25ns_v1_1_0_wMETsys/MC
 
 python extractJSONS.py -i datasets/datasets_reminiaod74x_fromLivia.json	-o ttHJetToGG_M125	-d lists_25ns_v1_1_0_wMETsys/MC
 python extractJSONS.py -i datasets/datasets_reminiaod74x_fromLivia.json	-o VBFHToGG_M-125	-d lists_25ns_v1_1_0_wMETsys/MC
 python extractJSONS.py -i datasets/datasets_reminiaod74x_fromLivia.json	-o DiPhoton		-d lists_25ns_v1_1_0_wMETsys/MC
-python extractJSONS.py -i datasets/datasets_reminiaod74x_fromLivia.json	-o DYJetsToLL		-d lists_25ns_v1_1_0_wMETsys/MC
 python extractJSONS.py -i datasets/datasets_reminiaod74x_fromLivia.json	-o QCD_Pt-30to40	-d lists_25ns_v1_1_0_wMETsys/MC
 python extractJSONS.py -i datasets/datasets_reminiaod74x_fromLivia.json	-o QCD_Pt-40toInf	-d lists_25ns_v1_1_0_wMETsys/MC
 python extractJSONS.py -i datasets/datasets_reminiaod74x_fromLivia.json	-o QCD_Pt-30toInf	-d lists_25ns_v1_1_0_wMETsys/MC

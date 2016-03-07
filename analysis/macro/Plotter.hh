@@ -40,7 +40,7 @@ typedef TH2DMap::iterator		TH2DMapIter;
 
 class Plotter{
 public:
-  Plotter(const TString inName, const TString outName, const TString inSpecies, const DblVec puweights, const Double_t lumi, Bool_t Data, Bool_t Blind, const TString type, Bool_t doMETCorr, const DblVec metcorr);
+  Plotter(const TString inName, const TString outName, const TString inSpecies, const DblVec puweights, const Double_t lumi, Bool_t Data, Bool_t Blind, const TString type, const DblVec metcorr);
   ~Plotter();
 
   void DoPlots(int prompt);  
@@ -72,13 +72,15 @@ private:
   TLorentzVector	fLorenzVecgg;
   TLorentzVector	fLorenzVecJet1;
   TLorentzVector	fLorenzVecJet2;
+  TLorentzVector	fLorenzVecJet3;
+  TLorentzVector	fLorenzVecJet4;
 
-  Bool_t		doMETcorr;
   DblVec		fMETCorr;
 
   DblVec		fPUWeights;
   Double_t 		fLumi;
   DblVec		fSelection;
+  DblVec		fSelection_unwgt;
 
   TTree * 		tpho;
   Int_t			nentries;
@@ -88,7 +90,12 @@ private:
   TH2DMap		fTH2DMap;
 
   // variables for branches
+  Int_t         run;
+  Int_t         event;
+  Int_t         lumi;
+  Float_t       rho;
   Int_t 	nvtx;
+  Int_t         sampleID;
   Float_t	weight;
   Float_t	mgg;
   Float_t	ptgg;
@@ -185,11 +192,57 @@ private:
   Float_t       phiJetLead;
   Float_t       massJetLead;
   Int_t         indexJetLead;
+  Float_t       NEMfracJet1;
+  Float_t       CEMfracJet1;
+  Float_t       ELfracJet1;
+  Float_t       CHfracJet1;
+  Float_t       NHfracJet1;
+  Float_t       PHfracJet1;
+  Float_t       MUfracJet1;
+  Int_t         CHmultJet1;
+  Int_t         NEmultJet1;
   Float_t       ptJetSubLead;
   Float_t       etaJetSubLead;
   Float_t       phiJetSubLead;
   Float_t       massJetSubLead;
   Int_t         indexJetSubLead;
+  Float_t       NEMfracJet2;
+  Float_t       CEMfracJet2;
+  Float_t       ELfracJet2;
+  Float_t       CHfracJet2;
+  Float_t       NHfracJet2;
+  Float_t       PHfracJet2;
+  Float_t       MUfracJet2;
+  Int_t         CHmultJet2;
+  Int_t         NEmultJet2;
+  Float_t       ptJet3;
+  Float_t       etaJet3;
+  Float_t       phiJet3;
+  Float_t       massJet3;
+  Int_t         indexJet3;
+  Float_t       NEMfracJet3;
+  Float_t       CEMfracJet3;
+  Float_t       ELfracJet3;
+  Float_t       CHfracJet3;
+  Float_t       NHfracJet3;
+  Float_t       PHfracJet3;
+  Float_t       MUfracJet3;
+  Int_t         CHmultJet3;
+  Int_t         NEmultJet3;
+  Float_t       ptJet4;
+  Float_t       etaJet4;
+  Float_t       phiJet4;
+  Float_t       massJet4;
+  Int_t         indexJet4;
+  Float_t       NEMfracJet4;
+  Float_t       CEMfracJet4;
+  Float_t       ELfracJet4;
+  Float_t       CHfracJet4;
+  Float_t       NHfracJet4;
+  Float_t       PHfracJet4;
+  Float_t       MUfracJet4;
+  Int_t         CHmultJet4;
+  Int_t         NEmultJet4;
   Int_t         nEle;
   Int_t         nMuons;
   Int_t         nJets;
@@ -201,6 +254,14 @@ private:
   Int_t         metF_HBHENoiseIso;
   Int_t         metF_CSC;
   Int_t         metF_eeBadSC;
+  Int_t         metF_MuonBadTrack;
+  Int_t         metF_HadronTrackRes;
+  Float_t       vtxX;
+  Float_t       vtxY;
+  Float_t       vtxZ;
+  Float_t       genVtxX;
+  Float_t       genVtxY;
+  Float_t       genVtxZ;
   Float_t       higgsVtxX;
   Float_t       higgsVtxY;
   Float_t       higgsVtxZ;
@@ -220,6 +281,12 @@ private:
 
 
   // branches
+  TBranch       *b_run;   //!
+  TBranch       *b_event;   //!
+  TBranch       *b_lumi;   //!
+  TBranch       *b_rho;   //!
+  TBranch       *b_sampleID;   //!
+  TBranch       *b_totXsec;   //!
   TBranch 	*b_nvtx;
   TBranch	*b_weight;
   TBranch	*b_mgg;
@@ -322,17 +389,65 @@ private:
   TBranch       *b_phiJetLead;   //!
   TBranch       *b_massJetLead;   //!
   TBranch       *b_indexJetLead;   //!
+  TBranch       *b_NEMfracJet1;   //!
+  TBranch       *b_CEMfracJet1;   //!
+  TBranch       *b_ELfracJet1;   //!
+  TBranch       *b_CHfracJet1;   //!
+  TBranch       *b_NHfracJet1;   //!
+  TBranch       *b_PHfracJet1;   //!
+  TBranch       *b_MUfracJet1;   //!
+  TBranch       *b_CHmultJet1;   //!
+  TBranch       *b_NEmultJet1;   //!
   TBranch       *b_ptJetSubLead;   //!
   TBranch       *b_etaJetSubLead;   //!
   TBranch       *b_phiJetSubLead;   //!
   TBranch       *b_massJetSubLead;   //!
   TBranch       *b_indexJetSubLead;   //!
+  TBranch       *b_NEMfracJet2;   //!
+  TBranch       *b_CEMfracJet2;   //!
+  TBranch       *b_ELfracJet2;   //!
+  TBranch       *b_CHfracJet2;   //!
+  TBranch       *b_NHfracJet2;   //!
+  TBranch       *b_PHfracJet2;   //!
+  TBranch       *b_MUfracJet2;   //!
+  TBranch       *b_CHmultJet2;   //!
+  TBranch       *b_NEmultJet2;   //!
+  TBranch       *b_ptJet3;   //!
+  TBranch       *b_etaJet3;   //!
+  TBranch       *b_phiJet3;   //!
+  TBranch       *b_massJet3;   //!
+  TBranch       *b_indexJet3;   //!
+  TBranch       *b_NEMfracJet3;   //!
+  TBranch       *b_CEMfracJet3;   //!
+  TBranch       *b_ELfracJet3;   //!
+  TBranch       *b_CHfracJet3;   //!
+  TBranch       *b_NHfracJet3;   //!
+  TBranch       *b_PHfracJet3;   //!
+  TBranch       *b_MUfracJet3;   //!
+  TBranch       *b_CHmultJet3;   //!
+  TBranch       *b_NEmultJet3;   //!
+  TBranch       *b_ptJet4;   //!
+  TBranch       *b_etaJet4;   //!
+  TBranch       *b_phiJet4;   //!
+  TBranch       *b_massJet4;   //!
+  TBranch       *b_indexJet4;   //!
+  TBranch       *b_NEMfracJet4;   //!
+  TBranch       *b_CEMfracJet4;   //!
+  TBranch       *b_ELfracJet4;   //!
+  TBranch       *b_CHfracJet4;   //!
+  TBranch       *b_NHfracJet4;   //!
+  TBranch       *b_PHfracJet4;   //!
+  TBranch       *b_MUfracJet4;   //!
+  TBranch       *b_CHmultJet4;   //!
+  TBranch       *b_NEmultJet4;   //!
   TBranch       *b_vhtruth;   //!
   TBranch       *b_metF_GV;   //!
   TBranch       *b_metF_HBHENoise;   //!
   TBranch       *b_metF_HBHENoiseIso;   //!
   TBranch       *b_metF_CSC;   //!
   TBranch       *b_metF_eeBadSC;   //!
+  TBranch       *b_metF_MuonBadTrack;   //!
+  TBranch       *b_metF_HadronTrackRes;   //!
   TBranch       *b_higgsVtxX;   //!
   TBranch       *b_higgsVtxY;   //!
   TBranch       *b_higgsVtxZ;   //!
@@ -345,10 +460,16 @@ private:
   TBranch       *b_massRaw;   //!
   TBranch       *b_mva1;   //!
   TBranch       *b_mva2;   //!
-  TBranch       *b_b_genZ;   //!
-  TBranch       *b_b_ptZ;   //!
-  TBranch       *b_b_etaZ;   //!
-  TBranch       *b_b_phiZ;   //!
+  TBranch       *b_genZ;   //!
+  TBranch       *b_ptZ;   //!
+  TBranch       *b_etaZ;   //!
+  TBranch       *b_phiZ;   //!
+  TBranch       *b_vtxX;
+  TBranch       *b_vtxY;
+  TBranch       *b_vtxZ;
+  TBranch       *b_genVtxX;
+  TBranch       *b_genVtxY;
+  TBranch       *b_genVtxZ;
 
 };
 

@@ -6,7 +6,8 @@ import FWCore.ParameterSet.Types as CfgTypes
 ######################
 # SET THESE BOOLS BEFORE RUNNING:
 isMC = True;
-isFLASHgg_1_1_0 = True;
+is76X = True;
+isFLASHgg_1_1_0 = False;
 ######################
 
 process = cms.Process("diPhoAna")
@@ -17,25 +18,32 @@ process.load("Configuration.StandardSequences.GeometryDB_cff")
 process.load("Configuration.StandardSequences.MagneticField_cff")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
 from Configuration.AlCa.GlobalTag import GlobalTag
-#process.GlobalTag.globaltag = 'MCRUN2_74_V9A' 		#50ns
 #process.GlobalTag.globaltag = 'POSTLS170_V5::All' 	#Phys14
+#process.GlobalTag.globaltag = 'MCRUN2_74_V9A' 		#50ns
 
-if ((isMC==False)):
-    process.GlobalTag = GlobalTag(process.GlobalTag, '74X_dataRun2_Prompt_v2', '')
-    print "74X_dataRun2_Prompt_v2"
-elif (isMC and isFLASHgg_1_1_0):
-    process.GlobalTag = GlobalTag(process.GlobalTag, '74X_mcRun2_asymptotic_v2', '')
-    print "74X_mcRun2_asymptotic_v2"
+# Pick up GlobalTag
+if (isMC):
+    if (is76X):
+        process.GlobalTag = GlobalTag(process.GlobalTag, '76X_mcRun2_asymptotic_v12', '')
+        print "76X_mcRun2_asymptotic_v12"
+    else:
+        process.GlobalTag = GlobalTag(process.GlobalTag, '74X_mcRun2_asymptotic_v2', '')
+        print "74X_mcRun2_asymptotic_v2"
+     
 else:
-    process.GlobalTag = GlobalTag(process.GlobalTag, 'MCRUN2_74_V9', '')
-    print "MCRUN2_74_V9"
+    if (is76X):
+        process.GlobalTag = GlobalTag(process.GlobalTag, '76X_dataRun2_v15', '')
+        print "76X_dataRun2_v15"
+    else:
+        process.GlobalTag = GlobalTag(process.GlobalTag, '74X_dataRun2_Prompt_v2', '')
+        print "74X_dataRun2_Prompt_v2"
 
-if (isMC==False and isFLASHgg_1_1_0):
-    flag = 'TriggerResults::RECO'
-    print "Using name RECO"
-else:
+if (isMC and isFLASHgg_1_1_0):
     flag = 'TriggerResults::PAT'
     print "Using name PAT"
+else: 
+    flag = 'TriggerResults::RECO'
+    print "Using name RECO"
 
 
 process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32( 1000 )
@@ -79,11 +87,12 @@ process.diPhoAna = cms.EDAnalyzer('NewDiPhoAnalyzer',
                                   inputTagJets= UnpackedJetCollectionVInputTag,  
                                   ElectronTag=cms.InputTag('flashggSelectedElectrons'),
                                   MuonTag=cms.InputTag('flashggSelectedMuons'), 
-                                  #bTag = cms.untracked.string(flashggBTag),      
+                                  bTag = cms.untracked.string(flashggBTag),      
+				  RhoTag = cms.InputTag('fixedGridRhoAll'),
                                   genPhotonExtraTag = cms.InputTag("flashggGenPhotonsExtra"),   
                                   DiPhotonTag = cms.untracked.InputTag('flashggDiPhotons'),
                                   PileUpTag = cms.untracked.InputTag('slimmedAddPileupInfo'),
-                                  generatorInfo = cms.InputTag("generator"),
+                                  generatorInfo = cms.InputTag('generator'),
 				  bits	        = cms.InputTag('TriggerResults::HLT'),
                                   flags        = cms.InputTag(flag),
                                   dopureweight = PU, 

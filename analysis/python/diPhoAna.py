@@ -6,7 +6,8 @@ import FWCore.ParameterSet.Types as CfgTypes
 ######################
 # SET THESE BOOLS BEFORE RUNNING:
 isMC = True; 
-isFLASHgg_1_1_0 = True;
+is76X = True;
+isFLASHgg_1_1_0 = False;
 ######################
 
 process = cms.Process("diPhoAna")
@@ -21,52 +22,41 @@ from Configuration.AlCa.GlobalTag import GlobalTag
 #process.GlobalTag.globaltag = 'POSTLS170_V5::All'     # Phys14 samples
 #process.GlobalTag.globaltag = 'MCRUN2_74_V9A'         # 50ns
 
-if ((isMC==False)):
-    process.GlobalTag = GlobalTag(process.GlobalTag, '74X_dataRun2_Prompt_v2', '')
-    print "74X_dataRun2_Prompt_v2"
-elif (isMC and isFLASHgg_1_1_0):
-    process.GlobalTag = GlobalTag(process.GlobalTag, '74X_mcRun2_asymptotic_v2', '')
-    print "74X_mcRun2_asymptotic_v2"
+# Pick up GlobalTag
+if (isMC):
+    if (is76X):
+        process.GlobalTag = GlobalTag(process.GlobalTag, '76X_mcRun2_asymptotic_v12', '')
+        print "76X_mcRun2_asymptotic_v12"
+    else:
+        process.GlobalTag = GlobalTag(process.GlobalTag, '74X_mcRun2_asymptotic_v2', '')
+        print "74X_mcRun2_asymptotic_v2"
+     
 else:
-    process.GlobalTag = GlobalTag(process.GlobalTag, 'MCRUN2_74_V9', '')
-    print "MCRUN2_74_V9"
+    if (is76X):
+        process.GlobalTag = GlobalTag(process.GlobalTag, '76X_dataRun2_v15', '')
+        print "76X_dataRun2_v15"
+    else:
+        process.GlobalTag = GlobalTag(process.GlobalTag, '74X_dataRun2_Prompt_v2', '')
+        print "74X_dataRun2_Prompt_v2"
 
-if (isMC==False and isFLASHgg_1_1_0):
-    flag = 'TriggerResults::RECO'
-    print "Using name RECO"
-else:
+
+if (isMC and isFLASHgg_1_1_0):
     flag = 'TriggerResults::PAT'
     print "Using name PAT"
+else: 
+    flag = 'TriggerResults::RECO'
+    print "Using name RECO"
 
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32( 20000 ) )
+
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32( 10000 ) )
 
 process.source = cms.Source("PoolSource",
                             fileNames=cms.untracked.vstring(
-	#"/store/user/soffi/MonoHgg_2HDM_MZP1000_MA0300_13TeV/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160211_173214/0000/myMicroAODOutputFile_1.root", 
-	#GluGluH
-	"/store/group/soffi/GluGluHToGG_M-125_13TeV_powheg_pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160211_162649/0000/myMicroAODOutputFile_1.root" 
-	#"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReMiniAOD-1_1_0-25ns/1_1_0/GluGluHToGG_M-125_13TeV_powheg_pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160105_223154/0000/myMicroAODOutputFile_5.root",
-        #New MET syst livia
-	#'/store/group/soffi/GluGluHToGG_M-125_13TeV_powheg_pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160211_162649/0000/myMicroAODOutputFile_1.root'
-        #"/store/group/soffi/GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160211_162546/0000/myMicroAODOutputFile_1.root"
-        #old seth
-        #"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReMiniAOD-1_1_0-25ns/1_1_0/GJet_Pt-20to40_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160105_222944/0000/myMicroAODOutputFile_1.root"
-        #***************************************************test file synchronyzation***************************************************
-        #data
-        #"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReReco74X-1_1_0-25ns/1_1_0/DoubleEG/RunIISpring15-ReReco74X-1_1_0-25ns-1_1_0-v0-Run2015D-04Dec2015-v2/160112_095813/0000/myMicroAODOutputFile_1.root" ,
-        #QCD 40 inf
-        #"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReMiniAOD-1_1_0-25ns/1_1_0/QCD_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160105_223606/0000/myMicroAODOutputFile_1.root" 
-        #QCD 30 inf
-        #"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReMiniAOD-1_1_0-25ns/1_1_0/QCD_Pt-30toInf_DoubleEMEnriched_MGG-40to80_TuneCUETP8M1_13TeV_Pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160105_223522/0000/myMicroAODOutputFile_1.root"
-        #QCD30-40
-        #"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReMiniAOD-1_1_0-25ns/1_1_0/QCD_Pt-30to40_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160105_223444/0000/myMicroAODOutputFile_1.root"
-        #gjet 40 inf
-        #"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReMiniAOD-1_1_0-25ns/1_1_0/GJet_Pt-40toInf_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160105_223028/0000/myMicroAODOutputFile_1.root"
-        #gjet 20-40
-        #"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReMiniAOD-1_1_0-25ns/1_1_0/GJet_Pt-20to40_DoubleEMEnriched_MGG-80toInf_TuneCUETP8M1_13TeV_Pythia8/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160105_222944/0000/myMicroAODOutputFile_1.root"
-        #diphoton
-        #"/store/group/phys_higgs/cmshgg/sethzenz/flashgg/RunIISpring15-ReMiniAOD-1_1_0-25ns/1_1_0/DiPhotonJetsBox_MGG-80toInf_13TeV-Sherpa/RunIISpring15-ReMiniAOD-1_1_0-25ns-1_1_0-v0-RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1/160105_222618/0000/myMicroAODOutputFile_1.root"
+	#76X
+	#"file:myMicroAODOutputFile_sig76X.root"
+	"/store/user/soffi/flashgg/RunIIFall15DR76-1_3_0-25ns_ext1/1_3_0/GluGluHToGG_M125_13TeV_amcatnloFXFX_pythia8/RunIIFall15DR76-1_3_0-25ns_ext1-1_3_0-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/160225_095156/0000/myMicroAODOutputFile_1.root",
+	#"/store/group/phys_higgs/cmshgg/ferriff/flashgg/RunIIFall15DR76-1_3_0-25ns_ext1/1_3_1/GluGluHToGG_M-125_13TeV_powheg_pythia8/RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/160130_032602/0000/myMicroAODOutputFile_1.root",
       )
                             )
 if (isMC==False):
@@ -86,6 +76,16 @@ process.options = cms.untracked.PSet(
     SkipEvent = cms.untracked.vstring('ProductNotFound')
 )
 
+process.MessageLogger.categories.extend(["GetManyWithoutRegistration","GetByLabelWithoutRegistration"])
+_messageSettings = cms.untracked.PSet(
+                reportEvery = cms.untracked.int32(1),
+                            optionalPSet = cms.untracked.bool(True),
+                            limit = cms.untracked.int32(10000000)
+                        )
+
+process.MessageLogger.cerr.GetManyWithoutRegistration = _messageSettings
+process.MessageLogger.cerr.GetByLabelWithoutRegistration = _messageSettings
+
 # to make jets
 from flashgg.MicroAOD.flashggJets_cfi import flashggBTag, maxJetCollections
 process.flashggUnpackedJets = cms.EDProducer("FlashggVectorVectorJetUnpacker",  
@@ -98,15 +98,17 @@ for i in range(0,maxJetCollections):
 
 process.diPhoAna = cms.EDAnalyzer('NewDiPhoAnalyzer',
                                   VertexTag = cms.untracked.InputTag('offlineSlimmedPrimaryVertices'),
-				  METTag=cms.untracked.InputTag('slimmedMETs'),#::FLASHggMicroAOD
+				  METTag=cms.untracked.InputTag('slimmedMETs'),
+				  #METTag=cms.untracked.InputTag('slimmedMETs::FLASHggMicroAOD'),
                                   inputTagJets= UnpackedJetCollectionVInputTag,            
                                   ElectronTag=cms.InputTag('flashggSelectedElectrons'),    
                                   MuonTag=cms.InputTag('flashggSelectedMuons'),            
                                   bTag = cms.untracked.string(flashggBTag),                
+				  RhoTag = cms.InputTag('fixedGridRhoAll'),
                                   genPhotonExtraTag = cms.InputTag("flashggGenPhotonsExtra"),    
                                   DiPhotonTag = cms.untracked.InputTag('flashggDiPhotons'),
                                   PileUpTag = cms.untracked.InputTag('slimmedAddPileupInfo'),
-                                  generatorInfo = cms.InputTag("generator"),
+                                  generatorInfo = cms.InputTag('generator'),
                                   dopureweight = cms.untracked.int32(1),
                                   bits         = cms.InputTag('TriggerResults::HLT'),
                                   flags        = cms.InputTag(flag),

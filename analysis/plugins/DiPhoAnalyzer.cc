@@ -303,7 +303,7 @@ void DiPhoAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   int hltDiphoton30Mass55PV=-500;
 
   const edm::TriggerNames &triggerNames = iEvent.triggerNames( *triggerBits );
-  vector<std::string> const &names = triggerNames.triggerNames();  
+  //vector<std::string> const &names = triggerNames.triggerNames();  
   for( unsigned index = 0; index < triggerNames.size(); ++index ) {
     // print out triggers that match "HLT_Photon or HLT_Diphoton" and have "Mass" as well
     //if( (TString::Format((triggerNames.triggerName( index )).c_str())).Contains("HLT_Photon") && (TString::Format((triggerNames.triggerName( index )).c_str())).Contains("Mass")  ) cout << index << " " << triggerNames.triggerName( index ) << " " << triggerBits->accept( index ) << endl;

@@ -43,8 +43,8 @@ def main():
     xsection = args[4]
     kfactor = args[5]
 
-    inputlist="lists_25ns_v1_1_0_wMETsys/"+dataset+".list"
-    inputweights="lists_25ns_v1_1_0_wMETsys/"+dataset+".weight"
+    inputlist="lists_25ns_v76X/"+dataset+".list"
+    inputweights="lists_25ns_v76X/"+dataset+".weight"
     output = dataset
 
     print "the outputs will be in the directory: "+opt.prefix
@@ -52,8 +52,7 @@ def main():
     if opt.download=='pccmsrm':
         diskoutputdir = "" 
 
-    else: diskoutputdir = '/afs/cern.ch/user/m/mzientek/private/MonoHggCMSSW/CMSSW_7_4_15/src/MonoHiggsToGG/output'
-    #else: diskoutputdir = '/afs/cern.ch/work/s/soffi/CMSSW_7_4_0_pre9-DiphoDumper/src/MonoHgg/output'
+    else: diskoutputdir = '/afs/cern.ch/user/m/mzientek/private/MonoHggCMSSW/CMSSW_7_6_3_patch2/src/MonoHiggsToGG/output'
     diskoutputmain = diskoutputdir+"/"+opt.prefix+"/"+output
 
     os.system("mkdir -p "+opt.prefix+"/"+output)

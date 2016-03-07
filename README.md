@@ -74,7 +74,7 @@ From the macro directory:
 NB. The structure of how to use these scripts can be seen in `doAll.sh`
 
 ## Step 7) Produce plots 
-The analysis is done in CMSSW_7_4_15
+The analysis is done in CMSSW_7_6_3_patch2
 - `make` (to compile) 
 - `./main` (to run)
 
@@ -95,7 +95,7 @@ The style for the plots is set with Style.cpp.
 # Copy the Framework from Github
 -----------------------------------------------------------
 ```
-cmsrel CMSSW_7_4_15
+cmsrel CMSSW_7_6_3_patch2
 cmsenv 
 
 cd ${CMSSW_BASE}/src
@@ -106,8 +106,11 @@ cd ${CMSSW_BASE}/src
 git clone https://github.com/cms-analysis/flashgg.git
 cd flashgg
 
-# get latest version of FLASHgg
-git checkout 1_1_0
+ADD LEPTON INFO from Chiara to FLASHgg:
+https://github.com/crovelli/flashgg/blob/dec2015/Taggers/interface/LeptonSelection.h
+
+https://github.com/crovelli/flashgg/blob/dec2015/Taggers/src/LeptonSelection.cc
+
 
 cd ${CMSSW_BASE}/src
 bash flashgg/setup.sh | tee setup.log
@@ -124,6 +127,5 @@ cd ${CMSSW_BASE}/src
 scram b -j 16
 ```
 
-
 ###MicroAOD file to test the dumper:
-root://eoscms//eos/cms/store/group/phys_higgs/soffi/MonoX/MonoH/MicroAOD/test/MicroAOD_GluGluToHToGG_M-125_13TeV.root
+root://eoscms.cern.ch//eos/cms/store/group/phys_higgs/cmshgg/ferriff/flashgg/RunIIFall15DR76-1_3_0-25ns_ext1/1_3_1/GluGluHToGG_M-125_13TeV_powheg_pythia8/RunIIFall15DR76-1_3_0-25ns_ext1-1_3_1-v0-RunIIFall15MiniAODv2-PU25nsData2015v1_76X_mcRun2_asymptotic_v12-v1/160130_032602/0000/myMicroAODOutputFile_1.root
